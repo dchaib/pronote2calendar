@@ -1,16 +1,15 @@
-import os
-from dotenv import load_dotenv
+import json
 from datetime import date, timedelta
 from pronote2calendar.pronote_client import PronoteClient
 
 def main():
-    load_dotenv()
 
-    url = os.environ["PRONOTE_URL"]
-    username = os.environ["PRONOTE_USERNAME"]
-    password = os.environ["PRONOTE_PASSWORD"]
+    with open('config.json', 'r') as file:
+        config = json.load(file)
 
-    client = PronoteClient(url, username, password)
+    pronote_config = config['pronote']
+
+    client = PronoteClient(pronote_config)
 
     if not client.is_logged_in():
         print("Login failed!")
