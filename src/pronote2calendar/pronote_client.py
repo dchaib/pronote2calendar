@@ -1,5 +1,6 @@
 import pronotepy
 from datetime import date
+from itertools import groupby
 
 from pronote2calendar.config_manager import update_pronote_password
 
@@ -51,4 +52,14 @@ class PronoteClient:
         return self.client.logged_in
 
     def get_lessons(self, start: date, end: date):
-        return self.client.lessons(start, end)
+        lessons = self.client.lessons(start, end)
+        return self.sort_and_filter_lessons(lessons)
+
+    def sort_and_filter_lessons(self, lessons: list[pronotepy.Lesson]) -> list[pronotepy.Lesson]:
+        lessons.sort(key=lambda x: (x.start, -x.num))
+        
+        filtered_lessons = []
+        for _, group in groupby(lessons, key=lambda x: x.start):
+            filtered_lessons.append(max(group, key=lambda x: x.num))
+        
+        return filtered_lessons
