@@ -12,7 +12,7 @@ def main():
 
     print(f"Updating lessons from {start} to {end}...")
 
-    pronote = PronoteClient(config["pronote"])
+    pronote = PronoteClient(config["pronote"], "credentials-pronote.json")
 
     if not pronote.is_logged_in():
         print("Login failed!")
@@ -20,7 +20,7 @@ def main():
 
     lessons = pronote.get_lessons(start, end)
 
-    calendar = GoogleCalendarClient(config["google_calendar"])
+    calendar = GoogleCalendarClient(config["google_calendar"], "credentials-google.json")
     events = calendar.get_events(start, end)
 
     changes = change_detection.get_changes(lessons, events)

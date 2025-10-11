@@ -1,50 +1,53 @@
+import json
 import pronotepy
 from datetime import date
 from itertools import groupby
 
-from pronote2calendar.config_manager import update_pronote_password
-
 class PronoteClient:
-    def __init__(self, config):
-        self.client = self.get_pronote_client(config)
+    def __init__(self, config, credentials_file_path):
+        self.credentials_file_path = credentials_file_path
+        self.client = self.get_pronote_client(config, credentials_file_path)
     
-    def get_pronote_client(self, config):
+    def get_pronote_client(self, config, credentials_file_path):
+        with open(credentials_file_path, 'r') as file:
+            credentials = json.load(file)
+        
         if config["connection_type"] == "token":
-            client = self.get_client_from_token_login(config)
+            client = self.get_client_from_token_login(config, credentials)
         else:
-            client = self.get_client_from_username_password(config)
+            client = self.get_client_from_username_password(config, credentials)
 
         if isinstance(client, pronotepy.ParentClient):
             client.set_child(config["child"])
 
         return client
     
-    def get_client_from_token_login(self, config) -> pronotepy.ClientBase:
+    def get_client_from_token_login(self, config, credentials) -> pronotepy.ClientBase:
         client = (
             pronotepy.ParentClient
             if config["account_type"] == "parent"
             else pronotepy.Client
         ).token_login(
-            pronote_url=config["url"],
-            username=config["username"],
-            password=config["password"],
-            uuid=config["uuid"],
-            client_identifier=config["client_identifier"]
+            pronote_url=credentials["url"],
+            username=credentials["username"],
+            password=credentials["password"],
+            uuid=credentials["uuid"],
+            client_identifier=credentials["client_identifier"]
         )
 
-        update_pronote_password(client.password)
+        self.update_pronote_password(client.password)
 
         return client
     
-    def get_client_from_username_password(self, config) -> pronotepy.ClientBase:
+    def get_client_from_username_password(self, config, credentials) -> pronotepy.ClientBase:
         client = (
             pronotepy.ParentClient
             if config["account_type"] == "parent"
             else pronotepy.Client
         )(
-            pronote_url=config["url"],
-            username=config["username"],
-            password=config["password"]
+            pronote_url=credentials["url"],
+            username=credentials["username"],
+            password=credentials["password"]
         )
         return client
 
@@ -63,3 +66,12 @@ class PronoteClient:
             filtered_lessons.append(max(group, key=lambda x: x.num))
         
         return filtered_lessons
+
+    def update_pronote_password(self, new_password: str):
+        with open(self.credentials_file_path, 'r') as file:
+            credentials = json.load(file)
+
+        credentials['password'] = new_password
+
+        with open(self.credentials_file_path, 'w') as file:
+            json.dump(credentials, file, indent=4)

@@ -11,9 +11,9 @@ SCOPES = [
 EXTENDED_PROPERTY_SOURCE="pronote2calendar"
 
 class GoogleCalendarClient:
-    def __init__(self, config):
+    def __init__(self, config, credentials_file_path):
         credentials = service_account.Credentials.from_service_account_file(
-                config["credentials_file"], scopes=SCOPES)
+            credentials_file_path, scopes=SCOPES)
         self.service = build("calendar", "v3", credentials=credentials)
         self.calendar_id = config["calendar_id"]
 
