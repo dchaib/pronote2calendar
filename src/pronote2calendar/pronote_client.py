@@ -71,11 +71,13 @@ class PronoteClient:
 
     def sort_and_filter_lessons(self, lessons: list[pronotepy.Lesson]) -> list[pronotepy.Lesson]:
         lessons.sort(key=lambda x: (x.start, -x.num))
-        
+
         filtered_lessons = []
         for _, group in groupby(lessons, key=lambda x: x.start):
             filtered_lessons.append(max(group, key=lambda x: x.num))
-        
+
+        filtered_lessons = [lesson for lesson in filtered_lessons if not lesson.canceled]
+
         return filtered_lessons
 
     def update_pronote_password(self, new_password: str):
