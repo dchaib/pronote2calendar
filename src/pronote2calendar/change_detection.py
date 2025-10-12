@@ -1,6 +1,9 @@
 from collections import defaultdict
 from typing import Any
+import logging
 import pronotepy
+
+logger = logging.getLogger(__name__)
 
 def lesson_to_event(lesson: pronotepy.Lesson) -> dict[str, Any]:
     return {
@@ -18,12 +21,15 @@ def get_changes(lessons: list[pronotepy.Lesson], events: list[dict[str, Any]]) -
 
     # Map lessons to their start time (timezone-aware)
     lesson_events = {lesson.start.astimezone().isoformat(): lesson_to_event(lesson) for lesson in lessons}
+    logger.debug("Considering %d lessons for changes", len(lesson_events))
 
     # Map events to their start time, allowing for multiple events at the same time
     event_map = defaultdict(list)
     for event in events:
         start_time = event['start'].get('dateTime', event['start'].get('date'))
         event_map[start_time].append(event)
+
+    logger.debug("Considering %d existing events from calendar for changes", sum(len(v) for v in event_map.values()))
 
     # Check lessons to add or update
     for start_time, lesson_event in lesson_events.items():
@@ -53,4 +59,11 @@ def get_changes(lessons: list[pronotepy.Lesson], events: list[dict[str, Any]]) -
         if start_time not in lesson_events:
             remove.extend(event_list)
 
-    return {'add': add, 'remove': remove, 'update': update}
+    logger.debug("Change detection results: add=%d remove=%d update=%d", len(add), len(remove), len(update))
+    changes = {'add': add, 'remove': remove, 'update': update}
+
+    for action, items in changes.items():
+        for item in items:
+            logger.debug("%s item detail: %r", action.upper(), item)
+    
+    return changes

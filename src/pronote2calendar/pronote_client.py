@@ -1,12 +1,16 @@
 import json
+import logging
 import pronotepy
 from datetime import date
 from itertools import groupby
+
+logger = logging.getLogger(__name__)
 
 class PronoteClient:
     def __init__(self, config, credentials_file_path):
         self.credentials_file_path = credentials_file_path
         self.client = self.get_pronote_client(config, credentials_file_path)
+        logger.debug("Pronote client initialized; logged_in=%s", getattr(self.client, 'logged_in', False))
     
     def get_pronote_client(self, config, credentials_file_path):
         with open(credentials_file_path, 'r') as file:
@@ -20,6 +24,7 @@ class PronoteClient:
         if isinstance(client, pronotepy.ParentClient):
             client.set_child(config["child"])
 
+        logger.debug("Pronote client created for account_type=%s connection_type=%s", config.get('account_type'), config.get('connection_type'))
         return client
     
     def get_client_from_token_login(self, config, credentials) -> pronotepy.ClientBase:
@@ -52,11 +57,17 @@ class PronoteClient:
         return client
 
     def is_logged_in(self) -> bool:
-        return self.client.logged_in
+        logged_in = self.client.logged_in
+        logger.debug("Pronote is_logged_in check: %s", logged_in)
+        return logged_in
 
     def get_lessons(self, start: date, end: date):
+        logger.debug("Fetching lessons from %s to %s", start, end)
         lessons = self.client.lessons(start, end)
-        return self.sort_and_filter_lessons(lessons)
+        result = self.sort_and_filter_lessons(lessons)
+        logger.debug("Raw lessons fetched: %d", len(lessons))
+        logger.debug("Fetched %d lessons (after filter)", len(result))
+        return result
 
     def sort_and_filter_lessons(self, lessons: list[pronotepy.Lesson]) -> list[pronotepy.Lesson]:
         lessons.sort(key=lambda x: (x.start, -x.num))
@@ -75,3 +86,4 @@ class PronoteClient:
 
         with open(self.credentials_file_path, 'w') as file:
             json.dump(credentials, file, indent=4)
+        logger.debug("Pronote password updated in %s", self.credentials_file_path)
