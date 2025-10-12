@@ -39,11 +39,17 @@ def main():
 
         logger.info("Detecting changes between lessons and calendar events")
         changes = change_detection.get_changes(lessons, events)
-        logger.info("Change detection produced add=%d remove=%d update=%d", len(changes.get('add', [])), len(changes.get('remove', [])), len(changes.get('update', [])))
+        adds = len(changes.get('add', []))
+        removes = len(changes.get('remove', []))
+        updates = len(changes.get('update', []))
+        logger.info("Change detection produced add=%d remove=%d update=%d", adds, removes, updates)
 
-        logger.info("Applying changes to calendar")
-        calendar.apply_changes(changes)
-        logger.info("Finished applying changes")
+        if adds == 0 and removes == 0 and updates == 0:
+            logger.info("No changes to apply, skipping calendar update")
+        else:
+            logger.info("Applying changes to calendar")
+            calendar.apply_changes(changes)
+            logger.info("Finished applying changes")
 
     except Exception as exc:
         logger.exception("Unhandled exception in main: %s", exc)
