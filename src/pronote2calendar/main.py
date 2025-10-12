@@ -8,7 +8,7 @@ from pronote2calendar.google_calendar_client import GoogleCalendarClient
 def main():
     config = read_config()
     start = datetime.combine(date.today(), datetime.min.time()).astimezone()
-    end = start + timedelta(days=2)
+    end = start + timedelta(days=config["max_days"])
 
     print(f"Updating lessons from {start} to {end}...")
 
