@@ -69,7 +69,8 @@ def get_changes(
                     ]
                 )
             else:
-                # If no matching event is found, update the first event and remove others
+                # If no matching event is found, update the first event
+                # and remove others
                 lesson_event["id"] = event_map[start_time][0].get("id")
                 update.append(lesson_event)
                 remove.extend(event_map[start_time][1:])

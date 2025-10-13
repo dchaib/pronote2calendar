@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import pytest
 
 from pronote2calendar.pronote_client import PronoteClient
 
@@ -38,7 +37,7 @@ def test_select_highest_num_per_start():
     result = pc.sort_and_filter_lessons(lessons)
 
     # For the same start time, the lesson with num=2 should be chosen
-    assert any(l.num == 2 for l in result)
+    assert any(lesson.num == 2 for lesson in result)
     # total lessons should be 2 (one for each start time)
     assert len(result) == 2
 
