@@ -1,0 +1,27 @@
+[project]
+name = "pronote2calendar"
+version = "0.1.0"
+description = "A simple tool to export your Pronote timetable to Google Calendar for easy access and integration with other apps."
+authors = [
+    {name = "Damien Chaib",email = "dchaib@users.noreply.github.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pronotepy (==2.14.5)",
+    "google-auth (==2.41.1)",
+    "google-auth-httplib2 (==0.2.0)",
+    "google-api-python-client (==2.184.0)",
+]
+
+[tool.poetry]
+packages = [{include = "pronote2calendar", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+test = [
+    "pytest (==8.4.2)"
+]
