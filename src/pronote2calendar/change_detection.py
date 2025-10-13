@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 
 def lesson_to_event(lesson: pronotepy.Lesson) -> dict[str, Any]:
     return {
-        'start': lesson.start.astimezone(),
-        'end': lesson.end.astimezone(),
+        'start': lesson.start,
+        'end': lesson.end,
         'summary': lesson.subject.name,
         'location': lesson.classroom,
         'description': lesson.teacher_name,
@@ -20,7 +20,7 @@ def get_changes(lessons: list[pronotepy.Lesson], events: list[dict[str, Any]]) -
     update = []
 
     # Map lessons to their start time (timezone-aware)
-    lesson_events = {lesson.start.astimezone().isoformat(): lesson_to_event(lesson) for lesson in lessons}
+    lesson_events = {lesson.start.isoformat(): lesson_to_event(lesson) for lesson in lessons}
     logger.debug("Considering %d lessons for changes", len(lesson_events))
 
     # Map events to their start time, allowing for multiple events at the same time

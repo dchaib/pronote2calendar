@@ -1,5 +1,6 @@
 import json
 import logging
+from zoneinfo import ZoneInfo
 import pronotepy
 from datetime import date
 from itertools import groupby
@@ -7,8 +8,9 @@ from itertools import groupby
 logger = logging.getLogger(__name__)
 
 class PronoteClient:
-    def __init__(self, config, credentials_file_path):
+    def __init__(self, config, credentials_file_path, timezone='Europe/Paris'):
         self.credentials_file_path = credentials_file_path
+        self.timezone = ZoneInfo(timezone)
         self.client = self.get_pronote_client(config, credentials_file_path)
         logger.debug("Pronote client initialized; logged_in=%s", getattr(self.client, 'logged_in', False))
     
@@ -65,6 +67,7 @@ class PronoteClient:
         logger.debug("Fetching lessons from %s to %s", start, end)
         lessons = self.client.lessons(start, end)
         result = self.sort_and_filter_lessons(lessons)
+        result = self._convert_lessons_to_aware(result)
         logger.debug("Raw lessons fetched: %d", len(lessons))
         logger.debug("Fetched %d lessons (after filter)", len(result))
         return result
@@ -89,3 +92,14 @@ class PronoteClient:
         with open(self.credentials_file_path, 'w') as file:
             json.dump(credentials, file, indent=4)
         logger.debug("Pronote password updated in %s", self.credentials_file_path)
+    
+    def _convert_to_aware(self, naive_datetime):
+        if naive_datetime.tzinfo is None:
+            return naive_datetime.replace(tzinfo=self.timezone)
+        return naive_datetime
+    
+    def _convert_lessons_to_aware(self, lessons):
+        for lesson in lessons:
+            lesson.start = self._convert_to_aware(lesson.start)
+            lesson.end = self._convert_to_aware(lesson.end)
+        return lessons
