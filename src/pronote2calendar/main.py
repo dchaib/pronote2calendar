@@ -32,17 +32,26 @@ def main():
         logger.info("Fetched %d lessons", len(lessons) if lessons is not None else 0)
 
         logger.info("Initializing Google Calendar client")
-        calendar = GoogleCalendarClient(config["google_calendar"], "credentials-google.json")
+        calendar = GoogleCalendarClient(
+            config["google_calendar"], "credentials-google.json"
+        )
         logger.info("Fetching events from Google Calendar")
         events = calendar.get_events(start, end)
-        logger.info("Fetched %d existing events", len(events) if events is not None else 0)
+        logger.info(
+            "Fetched %d existing events", len(events) if events is not None else 0
+        )
 
         logger.info("Detecting changes between lessons and calendar events")
         changes = change_detection.get_changes(lessons, events)
-        adds = len(changes.get('add', []))
-        removes = len(changes.get('remove', []))
-        updates = len(changes.get('update', []))
-        logger.info("Change detection produced add=%d remove=%d update=%d", adds, removes, updates)
+        adds = len(changes.get("add", []))
+        removes = len(changes.get("remove", []))
+        updates = len(changes.get("update", []))
+        logger.info(
+            "Change detection produced add=%d remove=%d update=%d",
+            adds,
+            removes,
+            updates,
+        )
 
         if adds == 0 and removes == 0 and updates == 0:
             logger.info("No changes to apply, skipping calendar update")

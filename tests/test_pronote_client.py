@@ -45,10 +45,7 @@ def test_select_highest_num_per_start():
 
 def test_select_highest_num_per_start_even_if_canceled():
     now = datetime.now()
-    lessons = [
-        DummyLesson(now, 1),
-        DummyLesson(now, 2, canceled=True)
-    ]
+    lessons = [DummyLesson(now, 1), DummyLesson(now, 2, canceled=True)]
 
     pc = PronoteClient.__new__(PronoteClient)
     result = pc.sort_and_filter_lessons(lessons)
