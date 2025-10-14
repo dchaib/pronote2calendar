@@ -10,7 +10,7 @@ def lesson_to_event(lesson: pronotepy.Lesson) -> dict[str, Any]:
     return {
         "start": lesson.start,
         "end": lesson.end,
-        "summary": lesson.subject.name,
+        "summary": lesson.subject.name if lesson.subject is not None else "",
         "location": lesson.classroom,
         "description": lesson.teacher_name,
     }

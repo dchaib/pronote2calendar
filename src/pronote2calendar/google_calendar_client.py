@@ -1,9 +1,9 @@
-import datetime
+from datetime import datetime
 import logging
 from typing import Any
 from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
+from googleapiclient.discovery import build # type: ignore
+from googleapiclient.errors import HttpError # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -15,14 +15,14 @@ EXTENDED_PROPERTY_SOURCE = "pronote2calendar"
 
 
 class GoogleCalendarClient:
-    def __init__(self, config, credentials_file_path):
+    def __init__(self, config: dict[str, Any], credentials_file_path: str):
         credentials = service_account.Credentials.from_service_account_file(
             credentials_file_path, scopes=SCOPES
         )
         self.service = build("calendar", "v3", credentials=credentials)
         self.calendar_id = config["calendar_id"]
 
-    def get_events(self, start: datetime, end: datetime):
+    def get_events(self, start: datetime, end: datetime) -> list[dict[str, Any]]:
         try:
             events_result = (
                 self.service.events()
@@ -45,6 +45,7 @@ class GoogleCalendarClient:
 
         except HttpError as error:
             logger.exception("Error fetching events from Google Calendar: %s", error)
+            return []
 
     def apply_changes(self, changes: dict):
 
