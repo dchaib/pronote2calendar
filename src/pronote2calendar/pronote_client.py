@@ -1,9 +1,10 @@
 import json
 import logging
-from zoneinfo import ZoneInfo
-import pronotepy
 from datetime import date
 from itertools import groupby
+from zoneinfo import ZoneInfo
+
+import pronotepy
 
 logger = logging.getLogger(__name__)
 

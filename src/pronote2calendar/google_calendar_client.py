@@ -1,9 +1,10 @@
-from datetime import datetime
 import logging
+from datetime import datetime
 from typing import Any
+
 from google.oauth2 import service_account
-from googleapiclient.discovery import build # type: ignore
-from googleapiclient.errors import HttpError # type: ignore
+from googleapiclient.discovery import build  # type: ignore
+from googleapiclient.errors import HttpError  # type: ignore
 
 logger = logging.getLogger(__name__)
 

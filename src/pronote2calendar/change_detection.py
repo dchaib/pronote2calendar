@@ -1,6 +1,7 @@
+import logging
 from collections import defaultdict
 from typing import Any
-import logging
+
 import pronotepy
 
 logger = logging.getLogger(__name__)

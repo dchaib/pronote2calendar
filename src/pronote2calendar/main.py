@@ -1,10 +1,11 @@
+import logging
 from datetime import date, datetime, timedelta
+
 from pronote2calendar import change_detection
 from pronote2calendar.config_manager import read_config
-from pronote2calendar.pronote_client import PronoteClient
 from pronote2calendar.google_calendar_client import GoogleCalendarClient
-import logging
 from pronote2calendar.logging_manager import setup_logging
+from pronote2calendar.pronote_client import PronoteClient
 
 
 def main():

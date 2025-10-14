@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from pronote2calendar.change_detection import lesson_to_event, get_changes
+from pronote2calendar.change_detection import get_changes, lesson_to_event
 
 
 class DummyLesson:
