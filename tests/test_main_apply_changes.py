@@ -38,7 +38,9 @@ def run_main_with_changes(monkeypatch, changes_value):
     monkeypatch.setattr(main_mod, "GoogleCalendarClient", lambda *a, **k: dummy_cal)
 
     # Patch change_detection.get_changes
-    monkeypatch.setattr(main_mod.change_detection, "get_changes", lambda lessons, events: changes_value)
+    monkeypatch.setattr(
+        main_mod.change_detection, "get_changes", lambda lessons, events: changes_value
+    )
 
     # Run main
     main_mod.main()

@@ -1,7 +1,7 @@
-from typing import Optional
 import logging
 import os
 import sys
+from typing import Optional
 
 
 def setup_logging(config_level: Optional[str] = None) -> None:

@@ -1,23 +1,28 @@
 import json
 import logging
-from zoneinfo import ZoneInfo
-import pronotepy
 from datetime import date
 from itertools import groupby
+from zoneinfo import ZoneInfo
+
+import pronotepy
 
 logger = logging.getLogger(__name__)
 
+
 class PronoteClient:
-    def __init__(self, config, credentials_file_path, timezone='Europe/Paris'):
+    def __init__(self, config, credentials_file_path, timezone="Europe/Paris"):
         self.credentials_file_path = credentials_file_path
         self.timezone = ZoneInfo(timezone)
         self.client = self.get_pronote_client(config, credentials_file_path)
-        logger.debug("Pronote client initialized; logged_in=%s", getattr(self.client, 'logged_in', False))
-    
+        logger.debug(
+            "Pronote client initialized; logged_in=%s",
+            getattr(self.client, "logged_in", False),
+        )
+
     def get_pronote_client(self, config, credentials_file_path):
-        with open(credentials_file_path, 'r') as file:
+        with open(credentials_file_path, "r") as file:
             credentials = json.load(file)
-        
+
         if config["connection_type"] == "token":
             client = self.get_client_from_token_login(config, credentials)
         else:
@@ -26,9 +31,13 @@ class PronoteClient:
         if isinstance(client, pronotepy.ParentClient):
             client.set_child(config["child"])
 
-        logger.debug("Pronote client created for account_type=%s connection_type=%s", config.get('account_type'), config.get('connection_type'))
+        logger.debug(
+            "Pronote client created for account_type=%s connection_type=%s",
+            config.get("account_type"),
+            config.get("connection_type"),
+        )
         return client
-    
+
     def get_client_from_token_login(self, config, credentials) -> pronotepy.ClientBase:
         client = (
             pronotepy.ParentClient
@@ -39,14 +48,16 @@ class PronoteClient:
             username=credentials["username"],
             password=credentials["password"],
             uuid=credentials["uuid"],
-            client_identifier=credentials["client_identifier"]
+            client_identifier=credentials["client_identifier"],
         )
 
         self.update_pronote_password(client.password)
 
         return client
-    
-    def get_client_from_username_password(self, config, credentials) -> pronotepy.ClientBase:
+
+    def get_client_from_username_password(
+        self, config, credentials
+    ) -> pronotepy.ClientBase:
         client = (
             pronotepy.ParentClient
             if config["account_type"] == "parent"
@@ -54,7 +65,7 @@ class PronoteClient:
         )(
             pronote_url=credentials["url"],
             username=credentials["username"],
-            password=credentials["password"]
+            password=credentials["password"],
         )
         return client
 
@@ -72,32 +83,36 @@ class PronoteClient:
         logger.debug("Fetched %d lessons (after filter)", len(result))
         return result
 
-    def sort_and_filter_lessons(self, lessons: list[pronotepy.Lesson]) -> list[pronotepy.Lesson]:
+    def sort_and_filter_lessons(
+        self, lessons: list[pronotepy.Lesson]
+    ) -> list[pronotepy.Lesson]:
         lessons.sort(key=lambda x: (x.start, -x.num))
 
         filtered_lessons = []
         for _, group in groupby(lessons, key=lambda x: x.start):
             filtered_lessons.append(max(group, key=lambda x: x.num))
 
-        filtered_lessons = [lesson for lesson in filtered_lessons if not lesson.canceled]
+        filtered_lessons = [
+            lesson for lesson in filtered_lessons if not lesson.canceled
+        ]
 
         return filtered_lessons
 
     def update_pronote_password(self, new_password: str):
-        with open(self.credentials_file_path, 'r') as file:
+        with open(self.credentials_file_path, "r") as file:
             credentials = json.load(file)
 
-        credentials['password'] = new_password
+        credentials["password"] = new_password
 
-        with open(self.credentials_file_path, 'w') as file:
+        with open(self.credentials_file_path, "w") as file:
             json.dump(credentials, file, indent=4)
         logger.debug("Pronote password updated in %s", self.credentials_file_path)
-    
+
     def _convert_to_aware(self, naive_datetime):
         if naive_datetime.tzinfo is None:
             return naive_datetime.replace(tzinfo=self.timezone)
         return naive_datetime
-    
+
     def _convert_lessons_to_aware(self, lessons):
         for lesson in lessons:
             lesson.start = self._convert_to_aware(lesson.start)
