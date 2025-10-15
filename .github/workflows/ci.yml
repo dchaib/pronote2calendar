@@ -8,7 +8,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -26,6 +26,21 @@ jobs:
 
       - name: Install dependencies
         run: poetry install
+
+      - name: Install dependencies
+        run: poetry install
+      
+      - name: Run Black (Code Formatting)
+        run: poetry run black --check --diff .
+
+      - name: Run Flake8 (Linting)
+        run: poetry run flake8 .
+
+      - name: Run Mypy (Type Checking)
+        run: poetry run mypy .
+
+      - name: Run Isort (Import Sorting)
+        run: poetry run isort --check-only --diff .
       
       - name: Run tests
         run: poetry run pytest
