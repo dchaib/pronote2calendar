@@ -1,0 +1,19 @@
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+
+# GitHub
+.github/
+
+# VS Code
+.vscode/
+
+# Configuration
+/config.json
+/credentials-*.json
+/renovate.json
