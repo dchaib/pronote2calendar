@@ -16,6 +16,10 @@ WORKDIR /app
 
 COPY --from=builder /src /app
 COPY --from=builder /.venv /app/.venv
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 ENV PATH="/app/.venv/bin:$PATH"
+
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["python", "-m", "pronote2calendar.main"]
