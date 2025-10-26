@@ -10,14 +10,15 @@ def get_credentials(qr_code, pin):
     client_class = get_client_class(qr_code["url"])
     if not client_class:
         return 1
-    
+
     uuid = secrets.token_hex(8)
-    
+
     client = client_class.qrcode_login(qr_code, pin, uuid)
-    
+
     credentials = client.export_credentials()
 
     return credentials
+
 
 def get_client_class(url: str) -> Optional[Type[ClientBase]]:
     if url.endswith("eleve.html"):
@@ -30,10 +31,13 @@ def get_client_class(url: str) -> Optional[Type[ClientBase]]:
         print("Unsupported client type")
         return None
 
+
 def main():
     parser = argparse.ArgumentParser(description="Process QR code and PIN for login")
-    parser.add_argument('--qr_code', type=str, required=True, help="QR code for the login")
-    parser.add_argument('--pin', type=str, required=True, help="PIN for the login")
+    parser.add_argument(
+        "--qr_code", type=str, required=True, help="QR code for the login"
+    )
+    parser.add_argument("--pin", type=str, required=True, help="PIN for the login")
 
     args = parser.parse_args()
 
@@ -46,6 +50,7 @@ def main():
     credentials = get_credentials(qr_code_data, args.pin)
 
     print(json.dumps(credentials, indent=4))
+
 
 if __name__ == "__main__":
     main()
