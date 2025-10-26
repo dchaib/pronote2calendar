@@ -43,13 +43,7 @@ class PronoteClient:
             pronotepy.ParentClient
             if config["account_type"] == "parent"
             else pronotepy.Client
-        ).token_login(
-            pronote_url=credentials["url"],
-            username=credentials["username"],
-            password=credentials["password"],
-            uuid=credentials["uuid"],
-            client_identifier=credentials["client_identifier"],
-        )
+        ).token_login(**credentials)
 
         self.update_pronote_password(client.password)
 
@@ -62,11 +56,7 @@ class PronoteClient:
             pronotepy.ParentClient
             if config["account_type"] == "parent"
             else pronotepy.Client
-        )(
-            pronote_url=credentials["url"],
-            username=credentials["username"],
-            password=credentials["password"],
-        )
+        )(**credentials)
         return client
 
     def is_logged_in(self) -> bool:
