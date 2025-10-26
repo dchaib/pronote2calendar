@@ -36,15 +36,10 @@ Using the QR code login method (recommended):
 4. Run the `init` command from the Docker image to generate credentials:
 
     ```bash
-    docker run --rm -it ghcr.io/dchaib/pronote2calendar:latest init
+    docker run --rm -it ghcr.io/dchaib/pronote2calendar:latest init --qr_code '<your QR code>' --pin <your PIN>
     ```
 
-5. Follow the prompts:
-    - Paste the JSON content from the QR code.
-    - Enter the PIN you used to generate the QR code.
-    - Leave the UUID blank when asked.
-
-6. Copy the credentials from the output to a file named `credentials-pronote.json`. Example structure:
+5. Copy the credentials from the output to a file named `credentials-pronote.json`. Example structure:
 
     ```json
     {
@@ -56,7 +51,10 @@ Using the QR code login method (recommended):
     }
     ```
 
-You can also use your username and password (if you have one).
+You can also use your username and password (if you have one). Simply run the `init` command without arguments and follow the instructions:
+```bash
+docker run --rm -it ghcr.io/dchaib/pronote2calendar:latest init
+```
 
 ### Google service account
 

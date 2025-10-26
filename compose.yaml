@@ -1,0 +1,9 @@
+services:
+  p2c:
+    image: "p2c:latest"
+    restart: "no"
+    user: 1000:1000
+    volumes:
+      - "./config.json:/app/config.json:ro"
+      - "./credentials-google.json:/app/credentials-google.json:ro"
+      - "./credentials-pronote.json:/app/credentials-pronote.json:rw"
