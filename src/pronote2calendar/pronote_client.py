@@ -43,15 +43,9 @@ class PronoteClient:
             pronotepy.ParentClient
             if config["account_type"] == "parent"
             else pronotepy.Client
-        ).token_login(
-            pronote_url=credentials["url"],
-            username=credentials["username"],
-            password=credentials["password"],
-            uuid=credentials["uuid"],
-            client_identifier=credentials["client_identifier"],
-        )
+        ).token_login(**credentials)
 
-        self.update_pronote_password(client.password)
+        self.update_credentials(client.export_credentials())
 
         return client
 
@@ -62,11 +56,7 @@ class PronoteClient:
             pronotepy.ParentClient
             if config["account_type"] == "parent"
             else pronotepy.Client
-        )(
-            pronote_url=credentials["url"],
-            username=credentials["username"],
-            password=credentials["password"],
-        )
+        )(**credentials)
         return client
 
     def is_logged_in(self) -> bool:
@@ -98,15 +88,10 @@ class PronoteClient:
 
         return filtered_lessons
 
-    def update_pronote_password(self, new_password: str):
-        with open(self.credentials_file_path, "r") as file:
-            credentials = json.load(file)
-
-        credentials["password"] = new_password
-
+    def update_credentials(self, credentials: dict):
         with open(self.credentials_file_path, "w") as file:
             json.dump(credentials, file, indent=4)
-        logger.debug("Pronote password updated in %s", self.credentials_file_path)
+        logger.debug("Pronote credentials updated in %s", self.credentials_file_path)
 
     def _convert_to_aware(self, naive_datetime):
         if naive_datetime.tzinfo is None:
