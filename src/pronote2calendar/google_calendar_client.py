@@ -71,27 +71,22 @@ class GoogleCalendarClient:
 
             return event_body
 
-        batch = self.service.new_batch_http_request()
         # Add new events
         add_count = 0
         for event in changes.get("add", []):
             event_body = create_event_body(event)
-            batch.add(
-                self.service.events().insert(
-                    calendarId=self.calendar_id, body=event_body
-                )
-            )
+            self.service.events().insert(
+                calendarId=self.calendar_id, body=event_body
+            ).execute()
             add_count += 1
 
         # Remove events
         remove_count = 0
         for event in changes.get("remove", []):
             event_id = event["id"]
-            batch.add(
-                self.service.events().delete(
-                    calendarId=self.calendar_id, eventId=event_id
-                )
-            )
+            self.service.events().delete(
+                calendarId=self.calendar_id, eventId=event_id
+            ).execute()
             remove_count += 1
 
         # Update existing events
@@ -99,20 +94,16 @@ class GoogleCalendarClient:
         for event in changes.get("update", []):
             event_body = create_event_body(event, is_update=True)
             event_id = event["id"]
-            batch.add(
-                self.service.events().patch(
-                    calendarId=self.calendar_id, eventId=event_id, body=event_body
-                )
-            )
+            self.service.events().patch(
+                calendarId=self.calendar_id, eventId=event_id, body=event_body
+            ).execute()
             update_count += 1
 
         logger.debug(
-            "Applying %d changes to calendar %s: add=%d update=%d remove=%d",
+            "Applied %d changes to calendar %s: add=%d update=%d remove=%d",
             add_count + update_count + remove_count,
             self.calendar_id,
             add_count,
             update_count,
             remove_count,
         )
-        batch.execute()
-        logger.debug("Batch execute complete")
