@@ -24,7 +24,7 @@ class DummyPronote:
 
 
 def make_config():
-    return {"log_level": "INFO", "max_days": 1, "pronote": {}, "google_calendar": {}}
+    return {"pronote": {}, "google_calendar": {}}
 
 
 def run_main_with_changes(monkeypatch, changes_value):
