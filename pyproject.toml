@@ -1,6 +1,6 @@
 [project]
 name = "pronote2calendar"
-version = "0.2.1"
+version = "0.3.0"
 description = "A simple tool to export your Pronote timetable to Google Calendar for easy access and integration with other apps."
 authors = [
     {name = "Damien Chaib",email = "dchaib@users.noreply.github.com"}
