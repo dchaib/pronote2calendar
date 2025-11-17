@@ -1,8 +1,8 @@
 import logging
-from datetime import date, datetime, timedelta
 
 from pronote2calendar import change_detection
 from pronote2calendar.config_manager import read_config
+from pronote2calendar.date_utils import compute_sync_period
 from pronote2calendar.google_calendar_client import GoogleCalendarClient
 from pronote2calendar.logging_manager import setup_logging
 from pronote2calendar.pronote_client import PronoteClient
@@ -15,8 +15,7 @@ def main():
 
     logger = logging.getLogger("pronote2calendar")
 
-    start = datetime.combine(date.today(), datetime.min.time()).astimezone()
-    end = start + timedelta(days=config["max_days"])
+    start, end = compute_sync_period(config.get("num_weeks_to_sync"))
 
     logger.info("Updating lessons from %s to %s", start.isoformat(), end.isoformat())
 

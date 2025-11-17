@@ -83,7 +83,7 @@ Create a `config.json` file in the root of your project directory. Here's an exa
     "google_calendar": {
         "calendar_id": "xxx@gmail.com"
     },
-    "max_days": 20
+    "num_weeks_to_sync": 3
 }
 ```
 
@@ -98,7 +98,7 @@ Here is an example with a `parent` account:
     "google_calendar": {
         "calendar_id": "xxx@gmail.com"
     },
-    "max_days": 20
+    "num_weeks_to_sync": 3
 }
 ```
 
@@ -108,7 +108,7 @@ Here is an example with a `parent` account:
 * **pronote.account_type**: Can be either `parent` or `child` depending on the account you used.
 * **pronote.child**: Only needed if using a **parent** account; specify the name of your child as shown in Pronote.
 * **google_calendar.calendar_id**: The **ID** of your Google Calendar (can be found in Google Calendar settings).
-* **max_days**: The number of days (including today) to sync. Example: If set to `20`, it will sync the next 20 days.
+* **num_weeks_to_sync**: The number of weeks (including the current one) to sync. Example: If set to `3`, it will sync the current week and the next 2 weeks. This parameter is optional. If not specified, the default value is `3`.
 
 ### 2. Create your Docker Compose file
 
