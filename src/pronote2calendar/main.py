@@ -1,28 +1,28 @@
 import logging
 
 from pronote2calendar import change_detection
-from pronote2calendar.config_manager import read_config
 from pronote2calendar.date_utils import compute_sync_period
 from pronote2calendar.google_calendar_client import GoogleCalendarClient
 from pronote2calendar.logging_manager import setup_logging
 from pronote2calendar.pronote_client import PronoteClient
+from pronote2calendar.settings import Settings
 from pronote2calendar.time_adjustments import apply_time_adjustments
 
 
 def main():
-    config = read_config()
+    config = Settings()
 
-    setup_logging(config.get("log_level"))
+    setup_logging(config.log_level)
 
     logger = logging.getLogger("pronote2calendar")
 
-    start, end = compute_sync_period(config.get("num_weeks_to_sync"))
+    start, end = compute_sync_period(config.num_weeks_to_sync)
 
     logger.info("Updating lessons from %s to %s", start.isoformat(), end.isoformat())
 
     try:
         logger.info("Initializing Pronote client")
-        pronote = PronoteClient(config["pronote"], "credentials-pronote.json")
+        pronote = PronoteClient(config.pronote, "credentials-pronote.json")
 
         if not pronote.is_logged_in():
             logger.error("Pronote login failed")
@@ -33,11 +33,11 @@ def main():
         logger.info("Fetched %d lessons", len(lessons) if lessons is not None else 0)
 
         logger.info("Applying time adjustments to lessons")
-        lessons = apply_time_adjustments(lessons, config.get("time_adjustments"))
+        lessons = apply_time_adjustments(lessons, config.time_adjustments)
 
         logger.info("Initializing Google Calendar client")
         calendar = GoogleCalendarClient(
-            config["google_calendar"], "credentials-google.json"
+            config.google_calendar, "credentials-google.json"
         )
         logger.info("Fetching events from Google Calendar")
         events = calendar.get_events(start, end)

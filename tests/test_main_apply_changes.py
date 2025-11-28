@@ -23,14 +23,19 @@ class DummyPronote:
         return []
 
 
-def make_config():
-    return {"pronote": {}, "google_calendar": {}}
-
-
 def run_main_with_changes(monkeypatch, changes_value):
-    # Patch read_config and setup_logging
-    monkeypatch.setattr(main_mod, "read_config", lambda: make_config())
+    # Patch setup_logging
     monkeypatch.setattr(main_mod, "setup_logging", lambda level: None)
+
+    # Create a mock Settings object
+    class MockSettings:
+        log_level = "INFO"
+        num_weeks_to_sync = 3
+        time_adjustments = []
+        pronote = None
+        google_calendar = None
+
+    monkeypatch.setattr(main_mod, "Settings", MockSettings)
 
     # Patch PronoteClient and GoogleCalendarClient
     monkeypatch.setattr(main_mod, "PronoteClient", lambda *a, **k: DummyPronote())

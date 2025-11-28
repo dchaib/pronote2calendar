@@ -6,11 +6,18 @@ from zoneinfo import ZoneInfo
 
 import pronotepy
 
+from pronote2calendar.settings import PronoteSettings
+
 logger = logging.getLogger(__name__)
 
 
 class PronoteClient:
-    def __init__(self, config, credentials_file_path, timezone="Europe/Paris"):
+    def __init__(
+        self,
+        config: PronoteSettings,
+        credentials_file_path: str,
+        timezone: str = "Europe/Paris",
+    ):
         self.credentials_file_path = credentials_file_path
         self.timezone = ZoneInfo(timezone)
         self.client = self.get_pronote_client(config, credentials_file_path)
@@ -19,29 +26,33 @@ class PronoteClient:
             getattr(self.client, "logged_in", False),
         )
 
-    def get_pronote_client(self, config, credentials_file_path) -> pronotepy.ClientBase:
+    def get_pronote_client(
+        self, config: PronoteSettings, credentials_file_path: str
+    ) -> pronotepy.Client:
         with open(credentials_file_path, "r") as file:
             credentials = json.load(file)
 
-        if config["connection_type"] == "token":
+        if config.connection_type == "token":
             client = self.get_client_from_token_login(config, credentials)
         else:
             client = self.get_client_from_username_password(config, credentials)
 
         if isinstance(client, pronotepy.ParentClient):
-            client.set_child(config["child"])
+            client.set_child(config.child)
 
         logger.debug(
             "Pronote client created for account_type=%s connection_type=%s",
-            config.get("account_type"),
-            config.get("connection_type"),
+            config.account_type,
+            config.connection_type,
         )
         return client
 
-    def get_client_from_token_login(self, config, credentials) -> pronotepy.ClientBase:
+    def get_client_from_token_login(
+        self, config: PronoteSettings, credentials
+    ) -> pronotepy.Client:
         client = (
             pronotepy.ParentClient
-            if config["account_type"] == "parent"
+            if config.account_type == "parent"
             else pronotepy.Client
         ).token_login(**credentials)
 
@@ -50,11 +61,11 @@ class PronoteClient:
         return client
 
     def get_client_from_username_password(
-        self, config, credentials
-    ) -> pronotepy.ClientBase:
+        self, config: PronoteSettings, credentials
+    ) -> pronotepy.Client:
         client = (
             pronotepy.ParentClient
-            if config["account_type"] == "parent"
+            if config.account_type == "parent"
             else pronotepy.Client
         )(**credentials)
         return client
