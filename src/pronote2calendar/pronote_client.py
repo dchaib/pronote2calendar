@@ -19,7 +19,7 @@ class PronoteClient:
             getattr(self.client, "logged_in", False),
         )
 
-    def get_pronote_client(self, config, credentials_file_path):
+    def get_pronote_client(self, config, credentials_file_path) -> pronotepy.ClientBase:
         with open(credentials_file_path, "r") as file:
             credentials = json.load(file)
 
@@ -64,7 +64,7 @@ class PronoteClient:
         logger.debug("Pronote is_logged_in check: %s", logged_in)
         return logged_in
 
-    def get_lessons(self, start: date, end: date):
+    def get_lessons(self, start: date, end: date) -> list[pronotepy.Lesson]:
         logger.debug("Fetching lessons from %s to %s", start, end)
         lessons = self.client.lessons(start, end)
         result = self.sort_and_filter_lessons(lessons)

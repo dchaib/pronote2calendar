@@ -27,9 +27,6 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Install dependencies
-        run: poetry install
-      
       - name: Run Black (Code Formatting)
         run: poetry run black --check --diff .
 

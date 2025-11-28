@@ -110,6 +110,43 @@ Here is an example with a `parent` account:
 * **google_calendar.calendar_id**: The **ID** of your Google Calendar (can be found in Google Calendar settings).
 * **num_weeks_to_sync**: The number of weeks (including the current one) to sync. Example: If set to `3`, it will sync the current week and the next 2 weeks. This parameter is optional. If not specified, the default value is `3`.
 
+#### Optional: Time Adjustments
+
+You can adjust lesson times for specific weekdays and time slots. This is useful if Pronote displays different times than the actual class times. Use the `time_adjustments` field:
+
+```json
+{
+    "pronote": { ... },
+    "google_calendar": { ... },
+    "num_weeks_to_sync": 3,
+    "time_adjustments": [
+        {
+            "weekdays": [ 1, 2, 4, 5 ],
+            "start_times": {
+                "08:00": "8:05",
+                "09:00": "9:05"
+            },
+            "end_times": {
+                "14:40": "14:45"
+            }
+        },
+        {
+            "weekdays": [ 3 ],
+            "start_times": {
+                "09:00": "8:55"
+            }
+        }
+    ]
+}
+```
+
+* **time_adjustments**: An array of adjustment rules. Each rule applies to specific weekdays and adjusts lesson times. This parameter is optional; if not specified, no time adjustments are applied.
+  - **weekdays**: An array of weekday numbers (ISO format: 1=Monday, 2=Tuesday, ..., 7=Sunday) to which this rule applies.
+  - **start_times**: A mapping of original start times (in `HH:MM` format) to adjusted start times. Only lessons matching the original time will be adjusted.
+  - **end_times**: A mapping of original end times (in `HH:MM` format) to adjusted end times. Only lessons matching the original time will be adjusted.
+
+For example, the first rule above adjusts all lessons on Monday, Tuesday, Thursday, and Friday (weekdays 1, 2, 4, 5) that start at 08:00 to start at 8:05 instead. The second rule adjusts Wednesday lessons (weekday 3) that start at 09:00 to start at 8:55.
+
 ### 2. Create your Docker Compose file
 
 You can use **Docker Compose** to run the container. Here is an example:
