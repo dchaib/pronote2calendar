@@ -70,74 +70,61 @@ To modify your Google Calendar, you need a Google service account and a service 
 
 ## Setup
 
-### 1. Configuration File (`config.json`)
+### 1. Configuration File (`config.yaml`)
 
-Create a `config.json` file in the root of your project directory. Here's an example with a `child` account:
+Create a `config.yaml` file in the root of your project directory. Here's an example with a `child` account:
 
-```json
-{
-    "pronote": {
-        "connection_type": "token",
-        "account_type": "child"
-    },
-    "google_calendar": {
-        "calendar_id": "xxx@gmail.com"
-    },
-    "num_weeks_to_sync": 3
-}
+```yaml
+pronote:
+  connection_type: token
+  account_type: child
+google_calendar:
+  calendar_id: "xxx@gmail.com"
+sync:
+  weeks: 3
 ```
 
 Here is an example with a `parent` account:
-```json
-{
-    "pronote": {
-        "connection_type": "token",
-        "account_type": "parent",
-        "child": "<child_name>"
-    },
-    "google_calendar": {
-        "calendar_id": "xxx@gmail.com"
-    },
-    "num_weeks_to_sync": 3
-}
+```yaml
+pronote:
+  connection_type: token
+  account_type: parent
+  child: <child_name>
+google_calendar:
+  calendar_id: "xxx@gmail.com"
+sync:
+  weeks: 3
 ```
 
-* **pronote.connection_type**: Defines how you connect to Pronote. There are 2 options, depending on what you used to generate the credentials:
-  - `token` if you used the QR code,
-  - `password` if you used your username and password.
-* **pronote.account_type**: Can be either `parent` or `child` depending on the account you used.
-* **pronote.child**: Only needed if using a **parent** account; specify the name of your child as shown in Pronote.
-* **google_calendar.calendar_id**: The **ID** of your Google Calendar (can be found in Google Calendar settings).
-* **num_weeks_to_sync**: The number of weeks (including the current one) to sync. Example: If set to `3`, it will sync the current week and the next 2 weeks. This parameter is optional. If not specified, the default value is `3`.
+* **pronote**
+  - **connection_type**: Defines how you connect to Pronote. There are 2 options, depending on what you used to generate the credentials:
+    - `token` if you used the QR code,
+    - `password` if you used your username and password.
+  - **account_type**: Can be either `parent` or `child` depending on the account you used.
+  - **child**: Only needed if using a **parent** account; specify the name of your child as shown in Pronote.
+* **google_calendar**
+  - **calendar_id**: The **ID** of your Google Calendar (can be found in Google Calendar settings).
+* **sync**
+  - **weeks**: The number of weeks (including the current one) to sync. Example: If set to `3`, it will sync the current week and the next 2 weeks. This parameter is optional. If not specified, the default value is `3`.
 
 #### Optional: Time Adjustments
 
 You can adjust lesson times for specific weekdays and time slots. This is useful if Pronote displays different times than the actual class times. Use the `time_adjustments` field:
 
-```json
-{
-    "pronote": { ... },
-    "google_calendar": { ... },
-    "num_weeks_to_sync": 3,
-    "time_adjustments": [
-        {
-            "weekdays": [ 1, 2, 4, 5 ],
-            "start_times": {
-                "08:00": "8:05",
-                "09:00": "9:05"
-            },
-            "end_times": {
-                "14:40": "14:45"
-            }
-        },
-        {
-            "weekdays": [ 3 ],
-            "start_times": {
-                "09:00": "8:55"
-            }
-        }
-    ]
-}
+```yaml
+pronote: { ... }
+google_calendar: { ... }
+sync: { ... }
+time_adjustments:
+  - weekdays: [ 1, 2, 4, 5 ]
+    start_times:
+      "08:00": "08:05"
+      "09:00": "09:05"
+    end_times:
+      "14:40": "14:45"
+  - weekdays: [ 3 ]
+    start_times:
+      "09:00": "08:55"
 ```
 
 * **time_adjustments**: An array of adjustment rules. Each rule applies to specific weekdays and adjusts lesson times. This parameter is optional; if not specified, no time adjustments are applied.
@@ -156,7 +143,7 @@ services:
   pronote2calendar:
     image: "ghcr.io/dchaib/pronote2calendar:latest"
     volumes:
-      - "./config.json:/app/config.json:ro"
+      - "./config.yaml:/app/config.yaml:ro"
       - "./credentials-google.json:/app/credentials-google.json:ro"
       - "./credentials-pronote.json:/app/credentials-pronote.json:rw"
 ```
@@ -165,7 +152,7 @@ If you are using the QR code login method, the Pronote credentials file needs wr
 
 To keep the example simple, it uses the `latest` tag. For reproducibility, you should pin a specific tagged image in production.
 
-It also assumes that all the configuration files (`config.json`, `credentials-google.json`, and `credentials-pronote.json`) are in the same directory as your compose file.
+It also assumes that all the configuration files (`config.yaml`, `credentials-google.json`, and `credentials-pronote.json`) are in the same directory as your compose file.
 
 
 ## Running the App
