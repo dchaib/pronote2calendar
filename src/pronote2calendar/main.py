@@ -10,13 +10,17 @@ from pronote2calendar.time_adjustments import apply_time_adjustments
 
 
 def main():
-    config = Settings()
+    try:
+        config = Settings()
+    except Exception as e:
+        print(f"Error loading configuration: {e}")
+        return
 
     setup_logging(config.log_level)
 
     logger = logging.getLogger("pronote2calendar")
 
-    start, end = compute_sync_period(config.num_weeks_to_sync)
+    start, end = compute_sync_period(config.sync.weeks)
 
     logger.info("Updating lessons from %s to %s", start.isoformat(), end.isoformat())
 

@@ -1,4 +1,5 @@
 from pronote2calendar import main as main_mod
+from pronote2calendar.settings import SyncSettings
 
 
 class DummyCalendar:
@@ -30,7 +31,7 @@ def run_main_with_changes(monkeypatch, changes_value):
     # Create a mock Settings object
     class MockSettings:
         log_level = "INFO"
-        num_weeks_to_sync = 3
+        sync = SyncSettings(weeks=3)
         time_adjustments = []
         pronote = None
         google_calendar = None

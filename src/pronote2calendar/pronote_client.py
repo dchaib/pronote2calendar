@@ -38,6 +38,7 @@ class PronoteClient:
             client = self.get_client_from_username_password(config, credentials)
 
         if isinstance(client, pronotepy.ParentClient):
+            assert config.child is not None  # Guaranteed by PronoteSettings validator
             client.set_child(config.child)
 
         logger.debug(

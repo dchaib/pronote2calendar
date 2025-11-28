@@ -1,8 +1,8 @@
-import logging
 from datetime import time
 from pathlib import Path
+from typing import Annotated, Literal, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -10,21 +10,31 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 
-logger = logging.getLogger(__name__)
+WeekdayNum = Annotated[int, Field(ge=1, le=7, description="1=Monday, 7=Sunday")]
 
 
 class PronoteSettings(BaseSettings):
-    connection_type: str = Field(default="token")
-    account_type: str = Field(default="child")
-    child: str = Field(default="")
+    connection_type: Literal["token", "password"] = Field(default="token")
+    account_type: Literal["child", "parent"] = Field(default="child")
+    child: str | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def check_child_for_parent(self) -> Self:
+        if self.account_type == "parent" and (not self.child or not self.child.strip()):
+            raise ValueError("'child' is required when 'account_type' is 'parent'")
+        return self
 
 
 class GoogleCalendarSettings(BaseSettings):
     calendar_id: str
 
 
+class SyncSettings(BaseSettings):
+    weeks: int = Field(default=3, ge=0)
+
+
 class TimeAdjustment(BaseSettings):
-    weekdays: list[int]
+    weekdays: list[WeekdayNum]
     start_times: dict[time, time] = Field(default_factory=dict)
     end_times: dict[time, time] = Field(default_factory=dict)
 
@@ -32,9 +42,9 @@ class TimeAdjustment(BaseSettings):
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(yaml_file=Path("config.yaml"))
 
-    pronote: PronoteSettings
+    pronote: PronoteSettings = Field(default_factory=PronoteSettings)
     google_calendar: GoogleCalendarSettings
-    num_weeks_to_sync: int = Field(default=3)
+    sync: SyncSettings = Field(default_factory=SyncSettings)
     log_level: str = Field(default="INFO")
     time_adjustments: list[TimeAdjustment] = Field(default_factory=list)
 
