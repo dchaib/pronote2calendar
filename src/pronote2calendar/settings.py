@@ -52,6 +52,10 @@ class TimeAdjustmentRule(BaseSettings):
     end_times: dict[FlexibleTime, FlexibleTime] = Field(default_factory=dict)
 
 
+class AjustmentsSettings(BaseSettings):
+    time: list[TimeAdjustmentRule] = Field(default_factory=list)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(yaml_file=Path("config.yaml"))
 
@@ -59,7 +63,7 @@ class Settings(BaseSettings):
     google_calendar: GoogleCalendarSettings
     sync: SyncSettings = Field(default_factory=SyncSettings)
     log_level: str = Field(default="INFO")
-    time_adjustments: list[TimeAdjustmentRule] = Field(default_factory=list)
+    adjustments: AjustmentsSettings = Field(default_factory=AjustmentsSettings)
 
     @classmethod
     def settings_customise_sources(

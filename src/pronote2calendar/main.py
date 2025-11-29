@@ -39,7 +39,7 @@ def main():
         logger.info("Fetched %d lessons", len(lessons) if lessons is not None else 0)
 
         logger.info("Applying time adjustments to lessons")
-        lessons = apply_time_adjustments(lessons, config.time_adjustments)
+        lessons = apply_time_adjustments(lessons, config.adjustments.time)
 
         logger.info("Initializing Google Calendar client")
         calendar = GoogleCalendarClient(
