@@ -13,7 +13,9 @@ def main():
     try:
         config = Settings()
     except Exception as e:
-        print(f"Error loading configuration: {e}")
+        setup_logging("ERROR")
+        logger = logging.getLogger("pronote2calendar")
+        logger.error("Error loading configuration: %s", e)
         return
 
     setup_logging(config.log_level)
