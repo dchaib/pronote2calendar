@@ -2,7 +2,7 @@ from datetime import time
 from pathlib import Path
 from typing import Annotated, Any, Literal, Self
 
-from pydantic import BeforeValidator, Field, model_validator
+from pydantic import BeforeValidator, EmailStr, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -39,7 +39,7 @@ class PronoteSettings(BaseSettings):
 
 
 class GoogleCalendarSettings(BaseSettings):
-    calendar_id: str
+    calendar_id: EmailStr = Field(description="Email address of the Google Calendar")
 
 
 class SyncSettings(BaseSettings):

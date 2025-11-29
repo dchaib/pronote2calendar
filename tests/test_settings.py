@@ -135,10 +135,38 @@ class TestGoogleCalendarSettings:
         with pytest.raises(ValidationError):
             GoogleCalendarSettings()
 
-    def test_calendar_id_provided(self):
-        """Test that GoogleCalendarSettings accepts a calendar_id."""
+    def test_calendar_id_valid_email(self):
+        """Test that GoogleCalendarSettings accepts a valid email-format calendar_id."""
         settings = GoogleCalendarSettings(calendar_id="my-calendar@gmail.com")
         assert settings.calendar_id == "my-calendar@gmail.com"
+
+    def test_calendar_id_with_custom_domain(self):
+        """Test that calendar_id accepts email with custom domain."""
+        settings = GoogleCalendarSettings(calendar_id="calendar@example.com")
+        assert settings.calendar_id == "calendar@example.com"
+
+    def test_calendar_id_with_subdomain(self):
+        """Test that calendar_id accepts email with subdomains."""
+        settings = GoogleCalendarSettings(calendar_id="user@mail.example.co.uk")
+        assert settings.calendar_id == "user@mail.example.co.uk"
+
+    def test_calendar_id_invalid_no_at_symbol(self):
+        """Test that calendar_id rejects addresses without @ symbol."""
+        with pytest.raises(ValidationError) as exc_info:
+            GoogleCalendarSettings(calendar_id="invalid-calendar")
+        assert "valid email address" in str(exc_info.value).lower()
+
+    def test_calendar_id_invalid_no_domain(self):
+        """Test that calendar_id rejects addresses without domain."""
+        with pytest.raises(ValidationError) as exc_info:
+            GoogleCalendarSettings(calendar_id="user@")
+        assert "valid email address" in str(exc_info.value).lower()
+
+    def test_calendar_id_invalid_no_local_part(self):
+        """Test that calendar_id rejects addresses without local part."""
+        with pytest.raises(ValidationError) as exc_info:
+            GoogleCalendarSettings(calendar_id="@example.com")
+        assert "valid email address" in str(exc_info.value).lower()
 
 
 class TestSyncSettings:
