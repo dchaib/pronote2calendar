@@ -10,7 +10,7 @@ from pronote2calendar.settings import (
     PronoteSettings,
     Settings,
     SyncSettings,
-    TimeAdjustment,
+    TimeAdjustmentRule,
     normalize_time,
 )
 
@@ -171,41 +171,41 @@ class TestTimeAdjustment:
     def test_weekdays_required(self):
         """Test that weekdays is required."""
         with pytest.raises(ValidationError):
-            TimeAdjustment()
+            TimeAdjustmentRule()
 
     def test_valid_weekdays(self):
         """Test that TimeAdjustment accepts valid weekday values."""
-        settings = TimeAdjustment(weekdays=[1, 2, 3, 4, 5])
+        settings = TimeAdjustmentRule(weekdays=[1, 2, 3, 4, 5])
         assert settings.weekdays == [1, 2, 3, 4, 5]
 
     def test_empty_weekdays(self):
         """Test that TimeAdjustment accepts an empty weekdays list."""
-        settings = TimeAdjustment(weekdays=[])
+        settings = TimeAdjustmentRule(weekdays=[])
         assert settings.weekdays == []
 
     def test_default_times(self):
         """Test that TimeAdjustment has default empty time mappings."""
-        settings = TimeAdjustment(weekdays=[1])
+        settings = TimeAdjustmentRule(weekdays=[1])
         assert settings.start_times == {}
         assert settings.end_times == {}
 
     def test_custom_start_times(self):
         """Test that TimeAdjustment accepts custom start_times."""
         start_times = {time(8, 0): time(8, 30), time(14, 0): time(14, 15)}
-        settings = TimeAdjustment(weekdays=[1, 2], start_times=start_times)
+        settings = TimeAdjustmentRule(weekdays=[1, 2], start_times=start_times)
         assert settings.start_times == start_times
 
     def test_custom_end_times(self):
         """Test that TimeAdjustment accepts custom end_times."""
         end_times = {time(17, 0): time(17, 30)}
-        settings = TimeAdjustment(weekdays=[1, 2], end_times=end_times)
+        settings = TimeAdjustmentRule(weekdays=[1, 2], end_times=end_times)
         assert settings.end_times == end_times
 
     def test_both_time_mappings(self):
         """Test that TimeAdjustment can have both start and end times."""
         start_times = {time(8, 0): time(8, 30)}
         end_times = {time(17, 0): time(17, 30)}
-        settings = TimeAdjustment(
+        settings = TimeAdjustmentRule(
             weekdays=[1], start_times=start_times, end_times=end_times
         )
         assert settings.start_times == start_times
@@ -214,31 +214,31 @@ class TestTimeAdjustment:
     def test_weekdays_valid_range(self):
         """Test that weekdays accepts valid values 1-7."""
         for day in range(1, 8):
-            settings = TimeAdjustment(weekdays=[day])
+            settings = TimeAdjustmentRule(weekdays=[day])
             assert day in settings.weekdays
 
     def test_weekdays_below_range(self):
         """Test that weekdays rejects values below 1."""
         with pytest.raises(ValidationError) as exc_info:
-            TimeAdjustment(weekdays=[0])
+            TimeAdjustmentRule(weekdays=[0])
         assert "greater than or equal to 1" in str(exc_info.value)
 
     def test_weekdays_above_range(self):
         """Test that weekdays rejects values above 7."""
         with pytest.raises(ValidationError) as exc_info:
-            TimeAdjustment(weekdays=[8])
+            TimeAdjustmentRule(weekdays=[8])
         assert "less than or equal to 7" in str(exc_info.value)
 
     def test_weekdays_mixed_valid_and_invalid(self):
         """Test that TimeAdjustment rejects if any weekday is invalid."""
         with pytest.raises(ValidationError) as exc_info:
-            TimeAdjustment(weekdays=[1, 2, 8])
+            TimeAdjustmentRule(weekdays=[1, 2, 8])
         assert "less than or equal to 7" in str(exc_info.value)
 
     def test_flexible_time_single_digit_hour_in_start_times(self):
         """Test that single-digit hours can be used in start_times keys."""
         start_times = {"8:00": "8:30", "9:15": "9:45"}
-        settings = TimeAdjustment(weekdays=[1], start_times=start_times)
+        settings = TimeAdjustmentRule(weekdays=[1], start_times=start_times)
         assert time(8, 0) in settings.start_times
         assert time(9, 15) in settings.start_times
         assert settings.start_times[time(8, 0)] == time(8, 30)
@@ -247,7 +247,7 @@ class TestTimeAdjustment:
     def test_flexible_time_single_digit_hour_in_end_times(self):
         """Test that single-digit hours can be used in end_times keys."""
         end_times = {"5:00": "5:15", "9:30": "9:45"}
-        settings = TimeAdjustment(weekdays=[1], end_times=end_times)
+        settings = TimeAdjustmentRule(weekdays=[1], end_times=end_times)
         assert time(5, 0) in settings.end_times
         assert time(9, 30) in settings.end_times
         assert settings.end_times[time(5, 0)] == time(5, 15)
@@ -256,7 +256,7 @@ class TestTimeAdjustment:
     def test_flexible_time_mixed_single_and_double_digit_hours(self):
         """Test that both single and double digit hours work together."""
         start_times = {"8:00": "8:30", "14:00": "14:15"}
-        settings = TimeAdjustment(weekdays=[1], start_times=start_times)
+        settings = TimeAdjustmentRule(weekdays=[1], start_times=start_times)
         assert time(8, 0) in settings.start_times
         assert time(14, 0) in settings.start_times
         assert settings.start_times[time(8, 0)] == time(8, 30)

@@ -46,7 +46,7 @@ class SyncSettings(BaseSettings):
     weeks: int = Field(default=3, ge=0)
 
 
-class TimeAdjustment(BaseSettings):
+class TimeAdjustmentRule(BaseSettings):
     weekdays: list[WeekdayNum]
     start_times: dict[FlexibleTime, FlexibleTime] = Field(default_factory=dict)
     end_times: dict[FlexibleTime, FlexibleTime] = Field(default_factory=dict)
@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     google_calendar: GoogleCalendarSettings
     sync: SyncSettings = Field(default_factory=SyncSettings)
     log_level: str = Field(default="INFO")
-    time_adjustments: list[TimeAdjustment] = Field(default_factory=list)
+    time_adjustments: list[TimeAdjustmentRule] = Field(default_factory=list)
 
     @classmethod
     def settings_customise_sources(

@@ -1,7 +1,7 @@
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from pronote2calendar.settings import TimeAdjustment
+from pronote2calendar.settings import TimeAdjustmentRule
 from pronote2calendar.time_adjustments import apply_time_adjustments
 
 
@@ -54,7 +54,7 @@ def test_adjust_start_time_with_list_of_weekdays():
     lesson = DummyLesson(start, end)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1, 2, 4, 5],  # Monday, Tuesday, Thursday, Friday
             start_times={time(9, 0): time(8, 55)},
         )
@@ -74,7 +74,7 @@ def test_adjust_end_time_with_list_of_weekdays():
     lesson = DummyLesson(start, end)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1, 2, 4, 5],
             end_times={time(10, 0): time(10, 5)},
         )
@@ -94,7 +94,7 @@ def test_adjust_both_start_and_end_times():
     lesson = DummyLesson(start, end)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1, 2, 4, 5],
             start_times={time(9, 0): time(8, 55)},
             end_times={time(10, 0): time(10, 5)},
@@ -114,7 +114,7 @@ def test_no_adjustment_when_weekday_does_not_match():
     lesson = DummyLesson(start, end)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1, 2, 3, 4, 5],  # Monday-Friday
             start_times={time(9, 0): time(8, 55)},
         )
@@ -133,7 +133,7 @@ def test_no_adjustment_when_time_does_not_match():
     lesson = DummyLesson(start, end)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1, 2, 4, 5],
             start_times={time(9, 0): time(8, 55)},  # Only 09:00 is mapped
         )
@@ -151,11 +151,11 @@ def test_multiple_rules_first_match_applies():
     lesson = DummyLesson(start, end)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1, 2, 4, 5],
             start_times={time(9, 0): time(8, 55)},
         ),
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1, 2, 4, 5],
             start_times={time(9, 0): time(8, 50)},  # Different adjustment
         ),
@@ -174,7 +174,7 @@ def test_sunday_as_seven():
     lesson = DummyLesson(start, end)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[7],  # Sunday as 7
             start_times={time(9, 0): time(8, 55)},
         )
@@ -192,7 +192,7 @@ def test_time_adjustment_with_varied_formats():
     lesson = DummyLesson(start, end)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1],
             start_times={time(9, 0): time(8, 58)},  # Single digit hour
         )
@@ -214,7 +214,7 @@ def test_multiple_lessons_all_adjusted():
     lesson2 = DummyLesson(start2, end2)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1, 2, 4, 5],
             start_times={time(9, 0): time(8, 55)},
         )
@@ -234,7 +234,7 @@ def test_multiple_time_mappings_in_single_rule():
     lesson = DummyLesson(start, end)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1, 2, 4, 5],
             start_times={
                 time(9, 0): time(8, 55),
@@ -261,7 +261,7 @@ def test_preserves_timezone_after_adjustment():
     lesson = DummyLesson(start, end)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1],
             start_times={time(9, 0): time(8, 55)},
         )
@@ -291,12 +291,12 @@ def test_complex_scenario_from_config():
     lesson_wednesday = DummyLesson(wednesday_start, wednesday_end)
 
     adjustments = [
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[1, 2, 4, 5],
             start_times={time(9, 0): time(8, 55), time(10, 0): time(9, 55)},
             end_times={time(10, 0): time(10, 5), time(11, 0): time(11, 5)},
         ),
-        TimeAdjustment(
+        TimeAdjustmentRule(
             weekdays=[3],
             start_times={time(9, 0): time(8, 58)},
         ),

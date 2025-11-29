@@ -3,13 +3,13 @@ from datetime import datetime, time
 
 from pronotepy import Lesson
 
-from pronote2calendar.settings import TimeAdjustment
+from pronote2calendar.settings import TimeAdjustmentRule
 
 logger = logging.getLogger(__name__)
 
 
 def apply_time_adjustments(
-    lessons: list[Lesson], adjustments_config: list[TimeAdjustment]
+    lessons: list[Lesson], adjustments_config: list[TimeAdjustmentRule]
 ) -> list[Lesson]:
     if not adjustments_config:
         logger.debug("No time adjustments configured")
@@ -26,7 +26,7 @@ def apply_time_adjustments(
 
 
 def _adjust_lesson_time(
-    lesson: Lesson, adjustments_config: list[TimeAdjustment]
+    lesson: Lesson, adjustments_config: list[TimeAdjustmentRule]
 ) -> Lesson:
     # Get the weekday (0=Monday, 6=Sunday in Python's weekday())
     # Convert to ISO format where 1=Monday, 7=Sunday
