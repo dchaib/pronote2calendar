@@ -100,12 +100,14 @@ sync:
   - **connection_type**: Defines how you connect to Pronote. There are 2 options, depending on what you used to generate the credentials:
     - `token` if you used the QR code,
     - `password` if you used your username and password.
-  - **account_type**: Can be either `parent` or `child` depending on the account you used.
-  - **child**: Only needed if using a **parent** account; specify the name of your child as shown in Pronote.
+
+    This is optional, the default value is `token`.
+  - **account_type**: Can be either `parent` or `child` depending on the account you used. This is optional, the default value is `child`.
+  - **child**: Only needed if using a `parent` account; specify the name of your child as shown in Pronote.
 * **google_calendar**
   - **calendar_id**: The **ID** of your Google Calendar (can be found in Google Calendar settings).
 * **sync**
-  - **weeks**: The number of weeks (including the current one) to sync. Example: If set to `3`, it will sync the current week and the next 2 weeks. This parameter is optional. If not specified, the default value is `3`.
+  - **weeks**: The number of weeks (including the current one) to sync. Example: If set to `3`, it will sync the current week and the next 2 weeks. This parameter is optional. If not specified, the default value is `3`. The minimum is `1`.
 
 #### Optional: Time Adjustments
 
@@ -124,7 +126,7 @@ time_adjustments:
       "14:40": "14:45"
   - weekdays: [ 3 ]
     start_times:
-      "09:00": "08:55"
+      "9:00": "8:55"
 ```
 
 * **time_adjustments**: An array of adjustment rules. Each rule applies to specific weekdays and adjusts lesson times. This parameter is optional; if not specified, no time adjustments are applied.

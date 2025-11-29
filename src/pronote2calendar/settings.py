@@ -43,7 +43,7 @@ class GoogleCalendarSettings(BaseSettings):
 
 
 class SyncSettings(BaseSettings):
-    weeks: int = Field(default=3, ge=0)
+    weeks: int = Field(default=3, ge=1)
 
 
 class TimeAdjustmentRule(BaseSettings):
