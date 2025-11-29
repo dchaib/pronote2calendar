@@ -154,10 +154,10 @@ class TestSyncSettings:
         settings = SyncSettings(weeks=5)
         assert settings.weeks == 5
 
-    def test_weeks_zero(self):
-        """Test that SyncSettings accepts 0 weeks."""
-        settings = SyncSettings(weeks=0)
-        assert settings.weeks == 0
+    def test_zero_weeks_fails(self):
+        """Test that SyncSettings rejects 0 weeks."""
+        with pytest.raises(ValidationError):
+            SyncSettings(weeks=0)
 
     def test_negative_weeks_fails(self):
         """Test that SyncSettings rejects negative weeks."""
