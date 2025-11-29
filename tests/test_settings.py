@@ -11,7 +11,54 @@ from pronote2calendar.settings import (
     Settings,
     SyncSettings,
     TimeAdjustment,
+    normalize_time,
 )
+
+
+class TestNormalizeTime:
+    """Test the normalize_time function."""
+
+    def test_normalize_single_digit_hour_with_minutes(self):
+        """Test that single-digit hours get padded with a leading zero."""
+        assert normalize_time("8:00") == "08:00"
+        assert normalize_time("9:30") == "09:30"
+        assert normalize_time("5:15") == "05:15"
+
+    def test_normalize_single_digit_hour_without_minutes(self):
+        """Test that single-digit hours without minutes get padded."""
+        assert normalize_time("8") == "08"
+        assert normalize_time("9") == "09"
+        assert normalize_time("5") == "05"
+
+    def test_normalize_double_digit_hour_unchanged(self):
+        """Test that double-digit hours remain unchanged."""
+        assert normalize_time("08:00") == "08:00"
+        assert normalize_time("14:30") == "14:30"
+        assert normalize_time("23:59") == "23:59"
+
+    def test_normalize_with_whitespace(self):
+        """Test that whitespace is stripped before normalization."""
+        assert normalize_time("  8:00  ") == "08:00"
+        assert normalize_time("\t9:30\t") == "09:30"
+
+    def test_normalize_non_digit_hour(self):
+        """Test that non-digit hours are returned unchanged."""
+        assert normalize_time("a:00") == "a:00"
+        assert normalize_time("abc") == "abc"
+
+    def test_normalize_non_string_values(self):
+        """Test that non-string values are returned unchanged."""
+        assert normalize_time(time(8, 0)) == time(8, 0)
+        assert normalize_time(123) == 123
+        assert normalize_time(None) is None
+
+    def test_normalize_empty_string(self):
+        """Test that empty string is returned unchanged."""
+        assert normalize_time("") == ""
+
+    def test_normalize_colon_only(self):
+        """Test that colon-only strings are returned unchanged."""
+        assert normalize_time(":") == ":"
 
 
 class TestPronoteSettings:
@@ -188,6 +235,33 @@ class TestTimeAdjustment:
             TimeAdjustment(weekdays=[1, 2, 8])
         assert "less than or equal to 7" in str(exc_info.value)
 
+    def test_flexible_time_single_digit_hour_in_start_times(self):
+        """Test that single-digit hours can be used in start_times keys."""
+        start_times = {"8:00": "8:30", "9:15": "9:45"}
+        settings = TimeAdjustment(weekdays=[1], start_times=start_times)
+        assert time(8, 0) in settings.start_times
+        assert time(9, 15) in settings.start_times
+        assert settings.start_times[time(8, 0)] == time(8, 30)
+        assert settings.start_times[time(9, 15)] == time(9, 45)
+
+    def test_flexible_time_single_digit_hour_in_end_times(self):
+        """Test that single-digit hours can be used in end_times keys."""
+        end_times = {"5:00": "5:15", "9:30": "9:45"}
+        settings = TimeAdjustment(weekdays=[1], end_times=end_times)
+        assert time(5, 0) in settings.end_times
+        assert time(9, 30) in settings.end_times
+        assert settings.end_times[time(5, 0)] == time(5, 15)
+        assert settings.end_times[time(9, 30)] == time(9, 45)
+
+    def test_flexible_time_mixed_single_and_double_digit_hours(self):
+        """Test that both single and double digit hours work together."""
+        start_times = {"8:00": "8:30", "14:00": "14:15"}
+        settings = TimeAdjustment(weekdays=[1], start_times=start_times)
+        assert time(8, 0) in settings.start_times
+        assert time(14, 0) in settings.start_times
+        assert settings.start_times[time(8, 0)] == time(8, 30)
+        assert settings.start_times[time(14, 0)] == time(14, 15)
+
 
 class TestSettings:
     """Test the Settings class."""
@@ -361,5 +435,45 @@ time_adjustments:
                 assert time(8, 0) in settings.time_adjustments[0].start_times
                 assert time(14, 0) in settings.time_adjustments[0].start_times
                 assert time(17, 0) in settings.time_adjustments[0].end_times
+            finally:
+                os.chdir(original_cwd)
+
+    def test_single_digit_hour_times_in_config(self):
+        """Test that single-digit hours (e.g., '8:00') work in YAML config."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "config.yaml"
+            config_path.write_text(
+                """
+google_calendar:
+  calendar_id: my-calendar@gmail.com
+time_adjustments:
+  - weekdays: [1, 2, 3]
+    start_times:
+      "8:00": "8:30"
+      "9:15": "9:45"
+    end_times:
+      "5:00": "5:15"
+      "17:30": "17:45"
+"""
+            )
+
+            original_cwd = Path.cwd()
+            try:
+                import os
+
+                os.chdir(tmpdir)
+                settings = Settings()
+                assert len(settings.time_adjustments) == 1
+                adj = settings.time_adjustments[0]
+                # Single-digit times should be normalized and parsed correctly
+                assert time(8, 0) in adj.start_times
+                assert time(9, 15) in adj.start_times
+                assert time(5, 0) in adj.end_times
+                assert time(17, 30) in adj.end_times
+                # Check the mapped values
+                assert adj.start_times[time(8, 0)] == time(8, 30)
+                assert adj.start_times[time(9, 15)] == time(9, 45)
+                assert adj.end_times[time(5, 0)] == time(5, 15)
+                assert adj.end_times[time(17, 30)] == time(17, 45)
             finally:
                 os.chdir(original_cwd)

@@ -1,8 +1,8 @@
 from datetime import time
 from pathlib import Path
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
-from pydantic import Field, model_validator
+from pydantic import BeforeValidator, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -10,7 +10,20 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 
+
+def normalize_time(value: Any) -> Any:
+    if (
+        isinstance(value, str)
+        and (parts := value.strip().split(":", 1))
+        and parts[0].isdigit()
+        and len(parts[0]) == 1
+    ):
+        return "0" + parts[0] + (":" + parts[1] if len(parts) > 1 else "")
+    return value
+
+
 WeekdayNum = Annotated[int, Field(ge=1, le=7, description="1=Monday, 7=Sunday")]
+FlexibleTime = Annotated[time, BeforeValidator(normalize_time)]
 
 
 class PronoteSettings(BaseSettings):
@@ -35,8 +48,8 @@ class SyncSettings(BaseSettings):
 
 class TimeAdjustment(BaseSettings):
     weekdays: list[WeekdayNum]
-    start_times: dict[time, time] = Field(default_factory=dict)
-    end_times: dict[time, time] = Field(default_factory=dict)
+    start_times: dict[FlexibleTime, FlexibleTime] = Field(default_factory=dict)
+    end_times: dict[FlexibleTime, FlexibleTime] = Field(default_factory=dict)
 
 
 class Settings(BaseSettings):
