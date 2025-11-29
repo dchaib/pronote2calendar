@@ -54,6 +54,7 @@ class TimeAdjustmentRule(BaseSettings):
 
 class AjustmentsSettings(BaseSettings):
     time: list[TimeAdjustmentRule] = Field(default_factory=list)
+    subject: dict[str, str] = Field(default_factory=dict)
 
 
 class Settings(BaseSettings):

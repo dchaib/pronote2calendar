@@ -193,7 +193,7 @@ class TestSyncSettings:
             SyncSettings(weeks=-1)
 
 
-class TestTimeAdjustment:
+class TestTimeAdjustmentRule:
     """Test the TimeAdjustment class."""
 
     def test_weekdays_required(self):
@@ -511,5 +511,86 @@ adjustments:
                 assert adj.start_times[time(9, 15)] == time(9, 45)
                 assert adj.end_times[time(5, 0)] == time(5, 15)
                 assert adj.end_times[time(17, 30)] == time(17, 45)
+            finally:
+                os.chdir(original_cwd)
+
+    def test_subject_adjustments_optional(self):
+        """Test that subject adjustments are optional in Settings."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "config.yaml"
+            config_path.write_text(
+                """
+google_calendar:
+  calendar_id: test@gmail.com
+"""
+            )
+
+            original_cwd = Path.cwd()
+            try:
+                import os
+
+                os.chdir(tmpdir)
+                settings = Settings()
+                assert settings.adjustments.subject == {}
+            finally:
+                os.chdir(original_cwd)
+
+    def test_subject_adjustments_in_config(self):
+        """Test that subject adjustments can be configured in Settings."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "config.yaml"
+            config_path.write_text(
+                """
+google_calendar:
+  calendar_id: test@gmail.com
+adjustments:
+  subject:
+    Physique-Chimie: Physique
+    SVT: "Sciences de la Vie et de la Terre"
+"""
+            )
+
+            original_cwd = Path.cwd()
+            try:
+                import os
+
+                os.chdir(tmpdir)
+                settings = Settings()
+                assert settings.adjustments.subject["Physique-Chimie"] == "Physique"
+                assert (
+                    settings.adjustments.subject["SVT"]
+                    == "Sciences de la Vie et de la Terre"
+                )
+            finally:
+                os.chdir(original_cwd)
+
+    def test_both_time_and_subject_adjustments_in_config(self):
+        """Test that both time and subject adjustments can coexist."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "config.yaml"
+            config_path.write_text(
+                """
+google_calendar:
+  calendar_id: test@gmail.com
+adjustments:
+  time:
+    - weekdays: [1, 2, 3]
+      start_times:
+        "8:00": "8:30"
+  subject:
+    Physique-Chimie: Physique
+    SVT: Sciences
+"""
+            )
+
+            original_cwd = Path.cwd()
+            try:
+                import os
+
+                os.chdir(tmpdir)
+                settings = Settings()
+                assert len(settings.adjustments.time) == 1
+                assert settings.adjustments.subject["Physique-Chimie"] == "Physique"
+                assert settings.adjustments.subject["SVT"] == "Sciences"
             finally:
                 os.chdir(original_cwd)

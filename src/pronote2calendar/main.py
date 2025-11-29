@@ -6,6 +6,7 @@ from pronote2calendar.google_calendar_client import GoogleCalendarClient
 from pronote2calendar.logging_manager import setup_logging
 from pronote2calendar.pronote_client import PronoteClient
 from pronote2calendar.settings import Settings
+from pronote2calendar.subject_adjustments import apply_subject_adjustments
 from pronote2calendar.time_adjustments import apply_time_adjustments
 
 
@@ -40,6 +41,9 @@ def main():
 
         logger.info("Applying time adjustments to lessons")
         lessons = apply_time_adjustments(lessons, config.adjustments.time)
+
+        logger.info("Applying subject adjustments to lessons")
+        lessons = apply_subject_adjustments(lessons, config.adjustments.subject)
 
         logger.info("Initializing Google Calendar client")
         calendar = GoogleCalendarClient(
