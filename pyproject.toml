@@ -10,7 +10,7 @@ requires-python = ">=3.13"
 dependencies = [
     "pronotepy (==2.14.5)",
     "google-api-python-client (==2.187.0)",
-    "pydantic-settings (==2.12.0)",
+    "pydantic-settings[yaml] (==2.12.0)",
 ]
 
 [tool.isort]
