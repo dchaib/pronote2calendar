@@ -193,7 +193,7 @@ class TestSyncSettings:
             SyncSettings(weeks=-1)
 
 
-class TestTimeAdjustment:
+class TestTimeAdjustmentRule:
     """Test the TimeAdjustment class."""
 
     def test_weekdays_required(self):
@@ -300,10 +300,15 @@ class TestSettings:
             config_path = Path(tmpdir) / "config.yaml"
             config_path.write_text("")
 
-            with pytest.raises(ValidationError):
-                Settings(
-                    _env_file=config_path,
-                )
+            original_cwd = Path.cwd()
+            try:
+                import os
+
+                os.chdir(tmpdir)
+                with pytest.raises(ValidationError):
+                    Settings()
+            finally:
+                os.chdir(original_cwd)
 
     def test_default_values_with_minimal_config(self):
         """Test that Settings has correct defaults with minimal config."""
@@ -323,7 +328,7 @@ class TestSettings:
                 assert settings.pronote.account_type == "child"
                 assert settings.sync.weeks == 3
                 assert settings.log_level == "INFO"
-                assert settings.time_adjustments == []
+                assert settings.adjustments.time == []
             finally:
                 os.chdir(original_cwd)
 
@@ -403,9 +408,10 @@ sync:
                 """
 google_calendar:
   calendar_id: test@gmail.com
-time_adjustments:
-  - weekdays: [1, 2, 3]
-  - weekdays: [4, 5]
+adjustments:
+  time:
+    - weekdays: [1, 2, 3]
+    - weekdays: [4, 5]
 """
             )
 
@@ -415,9 +421,9 @@ time_adjustments:
 
                 os.chdir(tmpdir)
                 settings = Settings()
-                assert len(settings.time_adjustments) == 2
-                assert settings.time_adjustments[0].weekdays == [1, 2, 3]
-                assert settings.time_adjustments[1].weekdays == [4, 5]
+                assert len(settings.adjustments.time) == 2
+                assert settings.adjustments.time[0].weekdays == [1, 2, 3]
+                assert settings.adjustments.time[1].weekdays == [4, 5]
             finally:
                 os.chdir(original_cwd)
 
@@ -436,13 +442,14 @@ pronote:
 sync:
   weeks: 4
 log_level: DEBUG
-time_adjustments:
-  - weekdays: [1, 2, 3, 4, 5]
-    start_times:
-      "08:00": "08:30"
-      "14:00": "14:15"
-    end_times:
-      "17:00": "17:30"
+adjustments:
+  time:
+    - weekdays: [1, 2, 3, 4, 5]
+      start_times:
+        "08:00": "08:30"
+        "14:00": "14:15"
+      end_times:
+        "17:00": "17:30"
 """
             )
 
@@ -458,11 +465,11 @@ time_adjustments:
                 assert settings.pronote.child == "Bob"
                 assert settings.sync.weeks == 4
                 assert settings.log_level == "DEBUG"
-                assert len(settings.time_adjustments) == 1
-                assert settings.time_adjustments[0].weekdays == [1, 2, 3, 4, 5]
-                assert time(8, 0) in settings.time_adjustments[0].start_times
-                assert time(14, 0) in settings.time_adjustments[0].start_times
-                assert time(17, 0) in settings.time_adjustments[0].end_times
+                assert len(settings.adjustments.time) == 1
+                assert settings.adjustments.time[0].weekdays == [1, 2, 3, 4, 5]
+                assert time(8, 0) in settings.adjustments.time[0].start_times
+                assert time(14, 0) in settings.adjustments.time[0].start_times
+                assert time(17, 0) in settings.adjustments.time[0].end_times
             finally:
                 os.chdir(original_cwd)
 
@@ -474,14 +481,15 @@ time_adjustments:
                 """
 google_calendar:
   calendar_id: my-calendar@gmail.com
-time_adjustments:
-  - weekdays: [1, 2, 3]
-    start_times:
-      "8:00": "8:30"
-      "9:15": "9:45"
-    end_times:
-      "5:00": "5:15"
-      "17:30": "17:45"
+adjustments:
+  time:
+    - weekdays: [1, 2, 3]
+      start_times:
+        "8:00": "8:30"
+        "9:15": "9:45"
+      end_times:
+        "5:00": "5:15"
+        "17:30": "17:45"
 """
             )
 
@@ -491,8 +499,8 @@ time_adjustments:
 
                 os.chdir(tmpdir)
                 settings = Settings()
-                assert len(settings.time_adjustments) == 1
-                adj = settings.time_adjustments[0]
+                assert len(settings.adjustments.time) == 1
+                adj = settings.adjustments.time[0]
                 # Single-digit times should be normalized and parsed correctly
                 assert time(8, 0) in adj.start_times
                 assert time(9, 15) in adj.start_times
@@ -503,5 +511,86 @@ time_adjustments:
                 assert adj.start_times[time(9, 15)] == time(9, 45)
                 assert adj.end_times[time(5, 0)] == time(5, 15)
                 assert adj.end_times[time(17, 30)] == time(17, 45)
+            finally:
+                os.chdir(original_cwd)
+
+    def test_subject_adjustments_optional(self):
+        """Test that subject adjustments are optional in Settings."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "config.yaml"
+            config_path.write_text(
+                """
+google_calendar:
+  calendar_id: test@gmail.com
+"""
+            )
+
+            original_cwd = Path.cwd()
+            try:
+                import os
+
+                os.chdir(tmpdir)
+                settings = Settings()
+                assert settings.adjustments.subject == {}
+            finally:
+                os.chdir(original_cwd)
+
+    def test_subject_adjustments_in_config(self):
+        """Test that subject adjustments can be configured in Settings."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "config.yaml"
+            config_path.write_text(
+                """
+google_calendar:
+  calendar_id: test@gmail.com
+adjustments:
+  subject:
+    Physique-Chimie: Physique
+    SVT: "Sciences de la Vie et de la Terre"
+"""
+            )
+
+            original_cwd = Path.cwd()
+            try:
+                import os
+
+                os.chdir(tmpdir)
+                settings = Settings()
+                assert settings.adjustments.subject["Physique-Chimie"] == "Physique"
+                assert (
+                    settings.adjustments.subject["SVT"]
+                    == "Sciences de la Vie et de la Terre"
+                )
+            finally:
+                os.chdir(original_cwd)
+
+    def test_both_time_and_subject_adjustments_in_config(self):
+        """Test that both time and subject adjustments can coexist."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "config.yaml"
+            config_path.write_text(
+                """
+google_calendar:
+  calendar_id: test@gmail.com
+adjustments:
+  time:
+    - weekdays: [1, 2, 3]
+      start_times:
+        "8:00": "8:30"
+  subject:
+    Physique-Chimie: Physique
+    SVT: Sciences
+"""
+            )
+
+            original_cwd = Path.cwd()
+            try:
+                import os
+
+                os.chdir(tmpdir)
+                settings = Settings()
+                assert len(settings.adjustments.time) == 1
+                assert settings.adjustments.subject["Physique-Chimie"] == "Physique"
+                assert settings.adjustments.subject["SVT"] == "Sciences"
             finally:
                 os.chdir(original_cwd)
