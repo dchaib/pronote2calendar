@@ -1,5 +1,5 @@
 # Build stage
-FROM python:3.13.9-slim AS builder
+FROM python:3.13.9-alpine AS builder
 
 RUN python -m pip install --upgrade pip
 RUN pip install poetry==2.2.1
