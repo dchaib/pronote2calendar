@@ -1,10 +1,9 @@
 from datetime import date, datetime, timedelta
-from typing import Optional, Tuple
 
 
 def compute_sync_period(
-    weeks: Optional[int] = None, start: Optional[date] = None
-) -> Tuple[datetime, datetime]:
+    weeks: int | None = None, start: date | None = None
+) -> tuple[datetime, datetime]:
     if weeks is None:
         weeks = 3
 
