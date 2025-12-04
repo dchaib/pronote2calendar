@@ -51,7 +51,6 @@ class GoogleCalendarClient:
             return []
 
     def apply_changes(self, changes: dict):
-
         def create_event_body(
             event: dict[str, Any], is_update: bool = False
         ) -> dict[str, Any]:
