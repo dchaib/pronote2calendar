@@ -29,7 +29,7 @@ class PronoteClient:
     def get_pronote_client(
         self, config: PronoteSettings, credentials_file_path: str
     ) -> pronotepy.Client:
-        with open(credentials_file_path, "r") as file:
+        with open(credentials_file_path) as file:
             credentials = json.load(file)
 
         if config.connection_type == "token":

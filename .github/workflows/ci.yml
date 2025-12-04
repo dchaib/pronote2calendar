@@ -27,17 +27,14 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --all-extras --dev
 
-      - name: Run Black (Code Formatting)
-        run: uv run black --check --diff .
+      - name: Run Ruff Linter
+        run: uv run ruff check --output-format=github .
 
-      - name: Run Flake8 (Linting)
-        run: uv run flake8 .
+      - name: Run Ruff Formatter
+        run: uv run ruff format --check .
 
       - name: Run Mypy (Type Checking)
         run: uv run mypy .
-
-      - name: Run Isort (Import Sorting)
-        run: uv run isort --check-only --diff .
       
       - name: Run tests
         run: uv run pytest

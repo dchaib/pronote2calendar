@@ -1,7 +1,6 @@
 import argparse
 import json
 import secrets
-from typing import Optional, Type
 
 from pronotepy import Client, ClientBase, ParentClient, VieScolaireClient
 
@@ -20,7 +19,7 @@ def get_credentials(qr_code, pin):
     return credentials
 
 
-def get_client_class(url: str) -> Optional[Type[ClientBase]]:
+def get_client_class(url: str) -> type[ClientBase] | None:
     if url.endswith("eleve.html"):
         return Client
     elif url.endswith("parent.html"):

@@ -1,10 +1,9 @@
 import logging
 import os
 import sys
-from typing import Optional
 
 
-def setup_logging(config_level: Optional[str] = None) -> None:
+def setup_logging(config_level: str | None = None) -> None:
     chosen = config_level or os.getenv("LOG_LEVEL") or "INFO"
     level = getattr(logging, chosen.upper(), logging.INFO)
 

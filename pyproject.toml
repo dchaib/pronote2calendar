@@ -11,8 +11,21 @@ dependencies = [
     "email-validator (==2.3.0)",
 ]
 
-[tool.isort]
-profile = "black"
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
 
 [build-system]
 requires = ["uv_build==0.9.15"]
@@ -20,10 +33,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "black (==25.11.0)",
-    "flake8 (==7.3.0)",
-    "flake8-bugbear (==25.11.29)",
     "mypy (==1.19.0)",
-    "isort (==7.0.0)",
     "pytest (==9.0.1)",
+    "ruff (==0.14.8)",
 ]
