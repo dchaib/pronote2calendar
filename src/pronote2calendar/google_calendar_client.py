@@ -7,6 +7,7 @@ from googleapiclient.discovery import build  # type: ignore
 from googleapiclient.errors import HttpError  # type: ignore
 
 from pronote2calendar.change_detection import ChangeSet
+from pronote2calendar.event_creator import LessonEvent
 from pronote2calendar.settings import GoogleCalendarSettings
 
 logger = logging.getLogger(__name__)
@@ -53,17 +54,19 @@ class GoogleCalendarClient:
 
     def apply_changes(self, changes: ChangeSet):
         def create_event_body(
-            event: dict[str, Any], is_update: bool = False
+            event: LessonEvent, is_update: bool = False
         ) -> dict[str, Any]:
             event_body = {
-                "summary": event.get("summary", ""),
-                "start": {"dateTime": event["start"].isoformat()},
-                "end": {"dateTime": event["end"].isoformat()},
-                "description": event.get("description", ""),
+                "summary": event.summary,
+                "start": {"dateTime": event.start.isoformat()},
+                "end": {"dateTime": event.end.isoformat()},
             }
 
-            if event.get("location"):
-                event_body["location"] = event["location"]
+            if event.description is not None:
+                event_body["description"] = event.description
+
+            if event.location is not None:
+                event_body["location"] = event.location
 
             if not is_update:
                 event_body["reminders"] = {"useDefault": False}
@@ -84,8 +87,8 @@ class GoogleCalendarClient:
 
         # Remove events
         remove_count = 0
-        for event in changes.to_remove:
-            event_id = event["id"]
+        for event_to_remove in changes.to_remove:
+            event_id = event_to_remove["id"]
             self.service.events().delete(
                 calendarId=self.calendar_id, eventId=event_id
             ).execute()
