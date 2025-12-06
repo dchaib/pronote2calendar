@@ -57,9 +57,9 @@ def main():
 
         logger.info("Detecting changes between lessons and calendar events")
         changes = change_detection.get_changes(lessons, events)
-        adds = len(changes.get("add", []))
-        removes = len(changes.get("remove", []))
-        updates = len(changes.get("update", []))
+        adds = len(changes.to_add)
+        removes = len(changes.to_remove)
+        updates = len(changes.to_update)
         logger.info(
             "Change detection produced add=%d remove=%d update=%d",
             adds,

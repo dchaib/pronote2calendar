@@ -1,10 +1,18 @@
 import logging
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import Any
 
 import pronotepy
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ChangeSet:
+    to_add: list[dict[str, Any]]
+    to_update: dict[Any, dict[str, Any]]
+    to_remove: list[dict[str, Any]]
 
 
 def lesson_to_event(lesson: pronotepy.Lesson) -> dict[str, Any]:
@@ -19,10 +27,10 @@ def lesson_to_event(lesson: pronotepy.Lesson) -> dict[str, Any]:
 
 def get_changes(
     lessons: list[pronotepy.Lesson], events: list[dict[str, Any]]
-) -> dict[str, list[dict[str, Any]]]:
-    add = []
-    remove = []
-    update = []
+) -> ChangeSet:
+    add: list[dict[str, Any]] = []
+    remove: list[dict[str, Any]] = []
+    update: dict[Any, dict[str, Any]] = {}
 
     # Map lessons to their start time (timezone-aware)
     lesson_events = {
@@ -72,8 +80,7 @@ def get_changes(
             else:
                 # If no matching event is found, update the first event
                 # and remove others
-                lesson_event["id"] = event_map[start_time][0].get("id")
-                update.append(lesson_event)
+                update[event_map[start_time][0]["id"]] = lesson_event
                 remove.extend(event_map[start_time][1:])
 
     # Check events to remove that don't have a matching lesson
@@ -87,10 +94,13 @@ def get_changes(
         len(remove),
         len(update),
     )
-    changes = {"add": add, "remove": remove, "update": update}
+    changes = ChangeSet(add, update, remove)
 
-    for action, items in changes.items():
-        for item in items:
-            logger.debug("%s item detail: %r", action.upper(), item)
+    for item in changes.to_add:
+        logger.debug("ADD: %r", item)
+    for id, item in changes.to_update.items():
+        logger.debug("UPDATE (id %s): %r", id, item)
+    for item in changes.to_remove:
+        logger.debug("REMOVE: %r", item)
 
     return changes

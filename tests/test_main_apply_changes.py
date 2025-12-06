@@ -1,4 +1,5 @@
 from pronote2calendar import main as main_mod
+from pronote2calendar.change_detection import ChangeSet
 from pronote2calendar.settings import AjustmentsSettings, SyncSettings
 
 
@@ -45,7 +46,9 @@ def run_main_with_changes(monkeypatch, changes_value):
 
     # Patch change_detection.get_changes
     monkeypatch.setattr(
-        main_mod.change_detection, "get_changes", lambda lessons, events: changes_value
+        main_mod.change_detection,
+        "get_changes",
+        lambda existing, new: changes_value,
     )
 
     # Run main
@@ -55,11 +58,12 @@ def run_main_with_changes(monkeypatch, changes_value):
 
 
 def test_main_skips_apply_when_no_changes(monkeypatch):
-    dummy_cal = run_main_with_changes(monkeypatch, {})
+    changes = ChangeSet([], {}, [])
+    dummy_cal = run_main_with_changes(monkeypatch, changes)
     assert not dummy_cal.applied
 
 
 def test_main_applies_when_changes_present(monkeypatch):
-    changes = {"add": [{"summary": "Test"}], "remove": [], "update": []}
+    changes = ChangeSet([1], {}, [])
     dummy_cal = run_main_with_changes(monkeypatch, changes)
     assert dummy_cal.applied

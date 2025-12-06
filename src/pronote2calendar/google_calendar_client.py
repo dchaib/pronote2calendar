@@ -6,6 +6,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build  # type: ignore
 from googleapiclient.errors import HttpError  # type: ignore
 
+from pronote2calendar.change_detection import ChangeSet
 from pronote2calendar.settings import GoogleCalendarSettings
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ class GoogleCalendarClient:
             logger.exception("Error fetching events from Google Calendar: %s", error)
             return []
 
-    def apply_changes(self, changes: dict):
+    def apply_changes(self, changes: ChangeSet):
         def create_event_body(
             event: dict[str, Any], is_update: bool = False
         ) -> dict[str, Any]:
@@ -74,7 +75,7 @@ class GoogleCalendarClient:
 
         # Add new events
         add_count = 0
-        for event in changes.get("add", []):
+        for event in changes.to_add:
             event_body = create_event_body(event)
             self.service.events().insert(
                 calendarId=self.calendar_id, body=event_body
@@ -83,7 +84,7 @@ class GoogleCalendarClient:
 
         # Remove events
         remove_count = 0
-        for event in changes.get("remove", []):
+        for event in changes.to_remove:
             event_id = event["id"]
             self.service.events().delete(
                 calendarId=self.calendar_id, eventId=event_id
@@ -92,9 +93,8 @@ class GoogleCalendarClient:
 
         # Update existing events
         update_count = 0
-        for event in changes.get("update", []):
+        for event_id, event in changes.to_update.items():
             event_body = create_event_body(event, is_update=True)
-            event_id = event["id"]
             self.service.events().patch(
                 calendarId=self.calendar_id, eventId=event_id, body=event_body
             ).execute()
