@@ -29,7 +29,7 @@ select = [
 ]
 
 [build-system]
-requires = ["uv_build==0.9.15"]
+requires = ["uv_build==0.9.17"]
 build-backend = "uv_build"
 
 [dependency-groups]
