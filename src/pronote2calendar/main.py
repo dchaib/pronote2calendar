@@ -2,6 +2,7 @@ import logging
 
 from pronote2calendar import change_detection
 from pronote2calendar.date_utils import compute_sync_period
+from pronote2calendar.event_creator import create_lesson_events
 from pronote2calendar.google_calendar_client import GoogleCalendarClient
 from pronote2calendar.logging_manager import setup_logging
 from pronote2calendar.pronote_client import PronoteClient
@@ -49,17 +50,21 @@ def main():
         calendar = GoogleCalendarClient(
             config.google_calendar, "credentials-google.json"
         )
-        logger.info("Fetching events from Google Calendar")
-        events = calendar.get_events(start, end)
+        logger.info("Fetching existing events from Google Calendar")
+        existing_events = calendar.get_events(start, end)
         logger.info(
-            "Fetched %d existing events", len(events) if events is not None else 0
+            "Fetched %d existing events",
+            len(existing_events) if existing_events is not None else 0,
         )
 
-        logger.info("Detecting changes between lessons and calendar events")
-        changes = change_detection.get_changes(lessons, events)
-        adds = len(changes.get("add", []))
-        removes = len(changes.get("remove", []))
-        updates = len(changes.get("update", []))
+        logger.info("Creating new events from lessons")
+        new_events = create_lesson_events(lessons, config.events.templates)
+
+        logger.info("Detecting changes between new and existing events")
+        changes = change_detection.get_changes(new_events, existing_events)
+        adds = len(changes.to_add)
+        removes = len(changes.to_remove)
+        updates = len(changes.to_update)
         logger.info(
             "Change detection produced add=%d remove=%d update=%d",
             adds,

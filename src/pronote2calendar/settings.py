@@ -57,6 +57,16 @@ class AjustmentsSettings(BaseSettings):
     subject: dict[str, str] = Field(default_factory=dict)
 
 
+class EventsTemplates(BaseSettings):
+    summary: str = Field(default="{{ subject }}")
+    description: str = Field(default="{{ teacher_name }}")
+    location: str = Field(default="{{ classroom }}")
+
+
+class EventsSettings(BaseSettings):
+    templates: EventsTemplates = Field(default_factory=EventsTemplates)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(yaml_file=Path("config.yaml"))
 
@@ -65,6 +75,7 @@ class Settings(BaseSettings):
     sync: SyncSettings = Field(default_factory=SyncSettings)
     log_level: str = Field(default="INFO")
     adjustments: AjustmentsSettings = Field(default_factory=AjustmentsSettings)
+    events: EventsSettings = Field(default_factory=EventsSettings)
 
     @classmethod
     def settings_customise_sources(

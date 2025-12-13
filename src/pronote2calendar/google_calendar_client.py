@@ -6,6 +6,8 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build  # type: ignore
 from googleapiclient.errors import HttpError  # type: ignore
 
+from pronote2calendar.change_detection import ChangeSet
+from pronote2calendar.event_creator import LessonEvent
 from pronote2calendar.settings import GoogleCalendarSettings
 
 logger = logging.getLogger(__name__)
@@ -50,19 +52,17 @@ class GoogleCalendarClient:
             logger.exception("Error fetching events from Google Calendar: %s", error)
             return []
 
-    def apply_changes(self, changes: dict):
+    def apply_changes(self, changes: ChangeSet):
         def create_event_body(
-            event: dict[str, Any], is_update: bool = False
-        ) -> dict[str, Any]:
-            event_body = {
-                "summary": event.get("summary", ""),
-                "start": {"dateTime": event["start"].isoformat()},
-                "end": {"dateTime": event["end"].isoformat()},
-                "description": event.get("description", ""),
+            event: LessonEvent, is_update: bool = False
+        ) -> dict[str, object]:
+            event_body: dict[str, object] = {
+                "summary": event.summary,
+                "start": {"dateTime": event.start.isoformat()},
+                "end": {"dateTime": event.end.isoformat()},
+                "description": event.description,
+                "location": event.location,
             }
-
-            if event.get("location"):
-                event_body["location"] = event["location"]
 
             if not is_update:
                 event_body["reminders"] = {"useDefault": False}
@@ -74,7 +74,7 @@ class GoogleCalendarClient:
 
         # Add new events
         add_count = 0
-        for event in changes.get("add", []):
+        for event in changes.to_add:
             event_body = create_event_body(event)
             self.service.events().insert(
                 calendarId=self.calendar_id, body=event_body
@@ -83,8 +83,8 @@ class GoogleCalendarClient:
 
         # Remove events
         remove_count = 0
-        for event in changes.get("remove", []):
-            event_id = event["id"]
+        for event_to_remove in changes.to_remove:
+            event_id = event_to_remove["id"]
             self.service.events().delete(
                 calendarId=self.calendar_id, eventId=event_id
             ).execute()
@@ -92,9 +92,8 @@ class GoogleCalendarClient:
 
         # Update existing events
         update_count = 0
-        for event in changes.get("update", []):
+        for event_id, event in changes.to_update.items():
             event_body = create_event_body(event, is_update=True)
-            event_id = event["id"]
             self.service.events().patch(
                 calendarId=self.calendar_id, eventId=event_id, body=event_body
             ).execute()
