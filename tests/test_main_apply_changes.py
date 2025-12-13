@@ -1,6 +1,10 @@
 from pronote2calendar import main as main_mod
 from pronote2calendar.change_detection import ChangeSet
-from pronote2calendar.settings import AjustmentsSettings, SyncSettings
+from pronote2calendar.settings import (
+    AjustmentsSettings,
+    EventsSettings,
+    SyncSettings,
+)
 
 
 class DummyCalendar:
@@ -34,6 +38,7 @@ def run_main_with_changes(monkeypatch, changes_value):
         log_level = "INFO"
         sync = SyncSettings(weeks=3)
         adjustments = AjustmentsSettings()
+        events = EventsSettings()
         pronote = None
         google_calendar = None
 

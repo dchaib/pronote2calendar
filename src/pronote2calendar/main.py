@@ -58,7 +58,7 @@ def main():
         )
 
         logger.info("Creating new events from lessons")
-        new_events = create_lesson_events(lessons)
+        new_events = create_lesson_events(lessons, config.events.templates)
 
         logger.info("Detecting changes between new and existing events")
         changes = change_detection.get_changes(new_events, existing_events)

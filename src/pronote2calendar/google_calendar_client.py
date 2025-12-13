@@ -55,18 +55,14 @@ class GoogleCalendarClient:
     def apply_changes(self, changes: ChangeSet):
         def create_event_body(
             event: LessonEvent, is_update: bool = False
-        ) -> dict[str, Any]:
-            event_body = {
+        ) -> dict[str, object]:
+            event_body: dict[str, object] = {
                 "summary": event.summary,
                 "start": {"dateTime": event.start.isoformat()},
                 "end": {"dateTime": event.end.isoformat()},
+                "description": event.description,
+                "location": event.location,
             }
-
-            if event.description is not None:
-                event_body["description"] = event.description
-
-            if event.location is not None:
-                event_body["location"] = event.location
 
             if not is_update:
                 event_body["reminders"] = {"useDefault": False}

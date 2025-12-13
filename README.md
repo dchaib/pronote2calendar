@@ -159,6 +159,89 @@ adjustments:
 
 For example, the mapping above will replace "Sciences de la Vie et de la Terre" with "SVT" for all lessons with that subject. Any subject not in the mapping will remain unchanged.
 
+#### Optional: Event Templates
+
+You can customize how lesson events appear in Google Calendar by defining templates for the event summary, description, and location. This uses [Jinja2 templating](https://jinja.palletsprojects.com/) to dynamically generate event properties based on lesson data. Use the `templates` field under `events`:
+
+```yaml
+pronote: { ... }
+google_calendar: { ... }
+sync: { ... }
+adjustments: { ... }
+events:
+  templates:
+    summary: "{{ subject }}"
+    description: "{{ teacher_name }}"
+    location: "{{ classroom }}"
+```
+
+##### Customizable Properties
+
+The following properties can be customized:
+
+* **summary**: The title of the calendar event. Default: `"{{ subject }}"`
+* **description**: The description of the event. **Supports HTML formatting** for rich text. Default: `"{{ teacher_name }}"`
+* **location**: The location field of the event. Default: `"{{ classroom }}"`
+
+All three properties are optional. If not specified, the default values shown above are used.
+
+##### Available Variables
+
+You can use any of the following variables in your templates:
+
+* **Lesson Details**
+  - `start` - Starting time of the lesson (datetime)
+  - `end` - Ending time of the lesson (datetime)
+  - `subject` - Subject name (string, empty if not available)
+  - `in_groups` - Whether the subject is in groups (boolean)
+  - `memo` - Lesson memo/notes (string, empty if not available)
+  - `status` - Status of the lesson (string, empty if not available)
+  - `background_color` - Background color of the lesson (string, empty if not available)
+
+* **Teacher Information**
+  - `teacher_name` - Name of the teacher (string, empty if not available)
+  - `teacher_names` - List of teacher names (list of strings, empty if not available)
+
+* **Location Information**
+  - `classroom` - Name of the classroom (string, empty if not available)
+  - `classrooms` - List of classroom names (list of strings, empty if not available)
+  - `virtual_classrooms` - List of URLs for virtual classrooms (list of strings)
+
+* **Group Information**
+  - `group_name` - Name of the group (string, empty if not available)
+  - `group_names` - List of group names (list of strings, empty if not available)
+
+* **Lesson Status Flags**
+  - `canceled` - Whether the lesson is canceled (boolean)
+  - `outing` - Whether it is a pedagogical outing (boolean)
+  - `exempted` - Whether the student is presence is exempt (boolean)
+  - `detention` - Whether it is marked as detention (boolean)
+  - `test` - Whether there will be a test in the lesson (boolean)
+  - `normal` - Whether the lesson is considered normal (not detention or outing) (boolean)
+
+##### Examples
+
+Here are some practical examples of template customization:
+
+```yaml
+events:
+  templates:
+    # Include subject and teacher
+    summary: "{{ subject }} - {{ teacher_name }}"
+    
+    # Include both classroom and group information
+    description: "Room: {{ classroom }}\nGroup: {{ group_name }}"
+    
+    # Use HTML formatting for rich text
+    description: "<b>{{ subject }}</b><br>Teacher: {{ teacher_name }}<br>Room: {{ classroom }}"
+    
+    # Show time details
+    summary: "[{{ start.strftime('%H:%M') }}] {{ subject }}"
+    
+    # Conditional example (using Jinja2 filters)
+    description: "{% if teacher_name %}Teacher: {{ teacher_name }}{% endif %}"
+```
+
 ### 2. Create your Docker Compose file
 
 You can use **Docker Compose** to run the container. Here is an example:

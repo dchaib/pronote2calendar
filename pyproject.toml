@@ -1,6 +1,6 @@
 [project]
 name = "pronote2calendar"
-version = "0.3.1"
+version = "0.4.0"
 description = "A simple tool to export your Pronote timetable to Google Calendar for easy access and integration with other apps."
 readme = "README.md"
 requires-python = ">=3.13"
@@ -9,6 +9,7 @@ dependencies = [
     "google-api-python-client (==2.187.0)",
     "pydantic-settings[yaml] (==2.12.0)",
     "email-validator (==2.3.0)",
+    "jinja2 (==3.1.6)",
 ]
 
 [tool.ruff.lint]
