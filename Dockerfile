@@ -1,5 +1,5 @@
 # Build stage
-FROM python:3.14.1-alpine AS builder
+FROM python:3.14.2-alpine AS builder
 COPY --from=ghcr.io/astral-sh/uv:0.9.17 /uv /uvx /bin/
 
 WORKDIR /app
@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-editable
 
 # Final stage
-FROM python:3.14.1-alpine
+FROM python:3.14.2-alpine
 WORKDIR /app
 
 COPY --from=builder /app/.venv /app/.venv
