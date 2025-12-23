@@ -8,5 +8,37 @@
       "matchPackageNames": ["ghcr.io/astral-sh/uv", "astral-sh/uv", "uv-build"],
       "groupName": "uv"
     }
+  ],
+  "customManagers": [
+    {
+      "description": "Manage container image tags in GitHub Actions workflows (including within a matrix)",
+      "customType": "regex",
+      "managerFilePatterns": ["/(^|/)\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "container:\\s+(?<depName>[\\S]+?):(?<currentValue>[^@\\s]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Manage Alpine OS versions in container image tags in Dockerfile",
+      "customType": "regex",
+      "managerFilePatterns": ["/Dockerfile$/"],
+      "matchStrings": [
+        "FROM\\s+(?<depName>[\\S]+?):(?<currentValue>[^@\\s]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"
+      ],
+      "versioningTemplate": "regex:^(?<compatibility>[\\S]*\\d+\\.\\d+(?:\\.\\d+)?(?:[\\S]*)?-alpine-?)(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?$",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Manage Alpine OS versions in container image tags in GitHub Actions workflows",
+      "customType": "regex",
+      "managerFilePatterns": ["/(^|/)\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "container:\\s+(?<depName>[\\S]+?):(?<currentValue>[^@\\s]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"
+      ],
+      "versioningTemplate": "regex:^(?<compatibility>[\\S]*\\d+\\.\\d+(?:\\.\\d+)?(?:[\\S]*)?-alpine-?)(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?$",
+      "datasourceTemplate": "docker"
+    }
   ]
+
 }
