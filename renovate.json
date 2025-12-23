@@ -8,5 +8,17 @@
       "matchPackageNames": ["ghcr.io/astral-sh/uv", "astral-sh/uv", "uv-build"],
       "groupName": "uv"
     }
+  ],
+  "customManagers": [
+    {
+      "description": "Manage container image tags in GitHub Actions workflows (including within a matrix)",
+      "customType": "regex",
+      "managerFilePatterns": ["/(^|/)\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "container:\\s+(?<depName>[\\S]+?):(?<currentValue>[^@\\s]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"
+      ],
+      "datasourceTemplate": "docker"
+    }
   ]
+
 }
