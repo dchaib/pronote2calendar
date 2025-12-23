@@ -209,3 +209,4 @@ __marimo__/
 # CUSTOM
 /config.yaml
 /credentials-*.json
+/compose.yaml
