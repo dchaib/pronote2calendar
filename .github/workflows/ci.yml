@@ -10,11 +10,21 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: ubuntu
+          - name: alpine
+            container: python:3.14.2-alpine3.23
+
+    container: ${{ matrix.container }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Set up Python
+      - name: Set up Python (Ubuntu)
+        if: matrix.name == 'ubuntu'
         uses: actions/setup-python@v6
         with:
           python-version-file: '.python-version'
@@ -28,13 +38,16 @@ jobs:
         run: uv sync --locked --all-extras --dev
 
       - name: Run Ruff Linter
+        if: matrix.name == 'ubuntu'
         run: uv run ruff check --output-format=github .
 
       - name: Run Ruff Formatter
+        if: matrix.name == 'ubuntu'
         run: uv run ruff format --check .
 
       - name: Run Mypy (Type Checking)
+        if: matrix.name == 'ubuntu'
         run: uv run mypy .
-      
+
       - name: Run tests
         run: uv run pytest
