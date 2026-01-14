@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "pronotepy (==2.14.5)",
-    "google-api-python-client (==2.187.0)",
+    "google-api-python-client (==2.188.0)",
     "pydantic-settings[yaml] (==2.12.0)",
     "email-validator (==2.3.0)",
     "jinja2 (==3.1.6)",
