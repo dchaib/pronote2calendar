@@ -1,7 +1,7 @@
 # Build stage
 FROM python:3.14.2-alpine3.23 AS builder
 ENV UV_NO_DEV=1
-COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.10.7 /uv /uvx /bin/
 
 WORKDIR /app
 RUN --mount=type=cache,target=/root/.cache/uv \
