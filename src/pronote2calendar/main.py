@@ -5,6 +5,7 @@ from pronote2calendar.date_utils import compute_sync_period
 from pronote2calendar.event_creator import create_lesson_events
 from pronote2calendar.google_calendar_client import GoogleCalendarClient
 from pronote2calendar.logging_manager import setup_logging
+from pronote2calendar.notifications import send_notifications
 from pronote2calendar.pronote_client import PronoteClient
 from pronote2calendar.settings import Settings
 from pronote2calendar.subject_adjustments import apply_subject_adjustments
@@ -78,6 +79,13 @@ def main():
             logger.info("Applying changes to calendar")
             calendar.apply_changes(changes)
             logger.info("Finished applying changes")
+
+            if config.notifications.enabled:
+                logger.info("Sending notifications about changes")
+                send_notifications(config.notifications, changes)
+                logger.info("Finished sending notifications")
+            else:
+                logger.info("Notifications are disabled, skipping notification step")
 
     except Exception as exc:
         logger.exception("Unhandled exception in main: %s", exc)

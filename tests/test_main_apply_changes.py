@@ -3,6 +3,7 @@ from pronote2calendar.change_detection import ChangeSet
 from pronote2calendar.settings import (
     AjustmentsSettings,
     EventsSettings,
+    NotificationsSettings,
     SyncSettings,
 )
 
@@ -39,6 +40,7 @@ def run_main_with_changes(monkeypatch, changes_value):
         sync = SyncSettings(weeks=3)
         adjustments = AjustmentsSettings()
         events = EventsSettings()
+        notifications = NotificationsSettings()  # new field
         pronote = None
         google_calendar = None
 
@@ -60,6 +62,54 @@ def run_main_with_changes(monkeypatch, changes_value):
     main_mod.main()
 
     return dummy_cal
+
+
+def test_main_sends_notifications_when_configured(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        main_mod, "send_notifications", lambda ns, ch: calls.append((ns, ch))
+    )
+    # prepare changes
+    changes = ChangeSet([1], {}, [])
+
+    # override Settings to enable notifications and give a destination
+    class MockSettingsEnabled:
+        log_level = "INFO"
+        sync = SyncSettings(weeks=3)
+        adjustments = AjustmentsSettings()
+        events = EventsSettings()
+        notifications = NotificationsSettings(destinations=["dummy"], enabled=True)
+        pronote = None
+        google_calendar = None
+
+    monkeypatch.setattr(main_mod, "Settings", MockSettingsEnabled)
+
+    run_main_with_changes(monkeypatch, changes)
+    assert calls, "send_notifications should have been called"
+
+
+def test_main_skips_notifications_when_empty(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        main_mod, "send_notifications", lambda ns, ch: calls.append((ns, ch))
+    )
+    changes = ChangeSet([1], {}, [])
+
+    # override settings to have empty destinations list
+    class MockSettings2:
+        log_level = "INFO"
+        sync = SyncSettings(weeks=3)
+        adjustments = AjustmentsSettings()
+        events = EventsSettings()
+        notifications = NotificationsSettings(destinations=[])
+        pronote = None
+        google_calendar = None
+
+    monkeypatch.setattr(main_mod, "Settings", MockSettings2)
+    run_main_with_changes(monkeypatch, changes)
+    # should still call send_notifications; function should handle empty list internally
+    assert len(calls) == 1
+    assert calls[0][0].destinations == []
 
 
 def test_main_skips_apply_when_no_changes(monkeypatch):

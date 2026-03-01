@@ -108,6 +108,14 @@ sync:
   - **calendar_id**: The **ID** of your Google Calendar (can be found in Google Calendar settings).
 * **sync**
   - **weeks**: The number of weeks (including the current one) to sync. Example: If set to `3`, it will sync the current week and the next 2 weeks. This parameter is optional. If not specified, the default value is `3`. The minimum is `1`.
+* **notifications** (optional)
+  - **enabled**: boolean to turn the notification feature on. Defaults to `false` (disabled).
+  - **destinations**: a list of service URLs or paths to configuration files understood by Apprise. See https://github.com/caronc/apprise for supported services; you can combine multiple entries and use the same syntax you would use in an Apprise config file.
+  - **max_delay_days**: only changes whose start time is at or before *now + this many days* are included in the notification. Default: 3.
+  - **templates**: Jinja2 templates for the notification title and body. The context provides `adds`, `updates`, `removes` and `changes` lists; each element contains `summary`, `start`, `end`, `location`, and `description`.
+
+    Default title is `Pronote2Calendar sync`; default body lists all adds/updates/removes.
+
 
 #### Optional: Time Adjustments
 
@@ -158,6 +166,10 @@ adjustments:
   - Each value is the adjusted subject name that will be displayed in Google Calendar.
 
 For example, the mapping above will replace "Sciences de la Vie et de la Terre" with "SVT" for all lessons with that subject. Any subject not in the mapping will remain unchanged.
+
+#### Change Notifications
+
+You can request a summary notification after each synchronization. Configure the `notifications` section (see above) with one or more destinations (URLs or config files) and optional templates; a single message listing all adds, updates and removals will be sent if any changes fall within the configured delay window.
 
 #### Optional: Event Templates
 
