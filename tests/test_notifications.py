@@ -208,3 +208,108 @@ def test_default_template_includes_diff_details(monkeypatch):
     assert "French" in captured["body"]
     # the diff should include the old value as well as the new one
     assert "Mr X" in captured["body"]
+
+
+def test_prepare_notification_data_structure(monkeypatch):
+    from pronote2calendar.models import UpdateDiff
+    from pronote2calendar.notifications import prepare_notification_data
+
+    now = datetime(2026, 3, 1, tzinfo=ZoneInfo("UTC"))
+    add_ev = make_event(0, now)
+    update_old = CalendarEvent(
+        id="u1",
+        start=now + timedelta(hours=2),
+        end=now + timedelta(hours=3),
+        summary="Old",
+        location="Loc",
+        description="Desc",
+    )
+    update_new = LessonEvent(
+        start=now + timedelta(hours=2),
+        end=now + timedelta(hours=3),
+        summary="New",
+        location="Loc",
+        description="Desc",
+    )
+    update_diff = UpdateDiff(
+        id="u1", old=update_old, new=update_new, changes={"summary": ("Old", "New")}
+    )
+    remove_ev = make_event(1, now)
+    remove_ev.summary = "Remove"
+
+    context = prepare_notification_data([add_ev], [update_diff], [remove_ev])
+
+    # Check counts
+    assert context["counts"] == {"adds": 1, "updates": 1, "removes": 1}
+
+    # Check changes structure and sorting
+    changes = context["changes"]
+    assert len(changes) == 3
+    # Sorted by start: add at now, remove at now+1day, update at now+2hours
+    assert changes[0]["type"] == "add"
+    assert changes[0]["start"] == add_ev.start
+    assert changes[0]["summary"] == add_ev.summary
+    assert changes[0]["data"] == {
+        "summary": add_ev.summary,
+        "start": add_ev.start,
+        "end": add_ev.end,
+        "location": add_ev.location,
+        "description": add_ev.description,
+    }
+
+    assert changes[1]["type"] == "update"
+    assert changes[1]["start"] == update_new.start
+    assert changes[1]["summary"] == update_new.summary
+    assert changes[1]["data"] == {
+        "old": {
+            "summary": update_old.summary,
+            "start": update_old.start,
+            "end": update_old.end,
+            "location": update_old.location,
+            "description": update_old.description,
+        },
+        "new": {
+            "summary": update_new.summary,
+            "start": update_new.start,
+            "end": update_new.end,
+            "location": update_new.location,
+            "description": update_new.description,
+        },
+        "changes": {"summary": ("Old", "New")},
+    }
+
+    assert changes[2]["type"] == "remove"
+    assert changes[2]["start"] == remove_ev.start
+    assert changes[2]["summary"] == remove_ev.summary
+    assert changes[2]["data"] == {
+        "summary": remove_ev.summary,
+        "start": remove_ev.start,
+        "end": remove_ev.end,
+        "location": remove_ev.location,
+        "description": remove_ev.description,
+    }
+
+
+def test_datetime_filter(monkeypatch):
+    ns = NotificationsSettings(
+        destinations=["url"],
+        enabled=True,
+        max_delay_days=10,
+        templates=NotificationsTemplates(
+            title="Title", body="{{ changes[0].start | datetime }}"
+        ),
+    )
+    now = datetime(2026, 3, 1, 12, 30, tzinfo=ZoneInfo("UTC"))
+    ev = make_event(0, now)
+    changes = ChangeSet([ev], [], [])
+
+    captured = {}
+
+    class Cap(DummyApprise):
+        def notify(self, title=None, body=None):
+            captured["title"] = title
+            captured["body"] = body
+
+    monkeypatch.setattr("pronote2calendar.notifications.Apprise", lambda: Cap())
+    send_notifications(ns, changes, now=now)
+    assert captured["body"] == "2026-03-01 12:30"

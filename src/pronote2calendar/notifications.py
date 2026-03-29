@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Literal, TypedDict
 
 from apprise import Apprise  # type: ignore
 from jinja2 import Environment, StrictUndefined
@@ -53,23 +53,75 @@ def filter_changes_by_date(
     return adds, updates, removes
 
 
+class ChangeItem(TypedDict):
+    type: Literal["add", "update", "remove"]
+    start: datetime
+    end: datetime
+    summary: str | None
+    location: str | None
+    description: str | None
+    data: dict[str, Any]
+
+
 def prepare_notification_data(
     adds: list[LessonEvent], updates: list[UpdateDiff], removes: list[CalendarEvent]
 ) -> dict[str, Any]:
-    """Prepare the data for template rendering."""
     adds_dicts = [_event_to_dict(e) for e in adds]
     updates_dicts = [update_diff_to_dict(u) for u in updates]
     removes_dicts = [_event_to_dict(e) for e in removes]
 
-    # Combine all changes into a single sorted list
-    all_changes = adds_dicts + updates_dicts + removes_dicts
-    all_changes_sorted = sorted(all_changes, key=lambda x: x["start"])
+    # Create normalized changes list
+    changes: list[ChangeItem] = []
+    for a in adds:
+        changes.append(
+            {
+                "type": "add",
+                "start": a.start,
+                "end": a.end,
+                "summary": a.summary,
+                "location": a.location,
+                "description": a.description,
+                "data": _event_to_dict(a),
+            }
+        )
+    for u in updates:
+        changes.append(
+            {
+                "type": "update",
+                "start": u.new.start,
+                "end": u.new.end,
+                "summary": u.new.summary,
+                "location": u.new.location,
+                "description": u.new.description,
+                "data": {
+                    "old": _event_to_dict(u.old),
+                    "new": _event_to_dict(u.new),
+                    "changes": u.changes,
+                },
+            }
+        )
+    for r in removes:
+        changes.append(
+            {
+                "type": "remove",
+                "start": r.start,
+                "end": r.end,
+                "summary": r.summary,
+                "location": r.location,
+                "description": r.description,
+                "data": _event_to_dict(r),
+            }
+        )
+    changes_sorted = sorted(changes, key=lambda x: x["start"])
+
+    counts = {"adds": len(adds), "updates": len(updates), "removes": len(removes)}
 
     return {
         "adds": adds_dicts,
         "updates": updates_dicts,
         "removes": removes_dicts,
-        "changes": all_changes_sorted,
+        "changes": changes_sorted,
+        "counts": counts,
     }
 
 
@@ -78,6 +130,13 @@ def render_templates(
 ) -> tuple[str, str]:
     """Render title and body templates."""
     env = Environment(undefined=StrictUndefined)
+
+    default_fmt = "%Y-%m-%d %H:%M"
+
+    def format_datetime(dt: datetime, fmt: str | None = None) -> str:
+        return dt.strftime(fmt or default_fmt)
+
+    env.filters["datetime"] = format_datetime
 
     try:
         title = env.from_string(settings.templates.title).render(context)
@@ -120,14 +179,24 @@ def send_notifications(
     (adds, updates, removes) are filtered.
 
     The templates defined in ``settings.templates`` are rendered using a
-    context with ``adds``, ``updates`` and ``removes`` lists.  Items in the
-    ``adds`` and ``removes`` lists are simple dictionaries containing
-    ``summary``, ``start``, ``end``, ``location`` and ``description``.  Entries
-    in ``updates`` are also dictionaries, but they additionally include
-    ``old`` and ``new`` sub‑dictionaries and a ``changes`` map describing which
-    fields changed (each value is a ``(old, new)`` tuple); for backward
-    compatibility the top‑level ``summary``/``start``/``end``/``location``/
-    ``description`` keys reflect the *new* values.
+    context with ``adds``, ``updates`` and ``removes`` lists (convenience lists
+    for simple templates). Items in the ``adds`` and ``removes`` lists are simple
+    dictionaries containing ``summary``, ``start``, ``end``, ``location`` and
+    ``description``. Entries in ``updates`` are also dictionaries, but they
+    additionally include ``old`` and ``new`` sub‑dictionaries and a ``changes``
+    map describing which fields changed (each value is a ``(old, new)`` tuple);
+    the top‑level ``summary``/``start``/``end``/ ``location``/``description`` keys
+    reflect the *new* values.
+
+    Additionally, the context includes:
+    - ``changes``: a normalized list of all changes, sorted by start time. Each
+      item has ``type`` ("add", "update", or "remove"), ``start``, ``summary``,
+      ``end``, ``location``, ``description``, and ``data`` (the underlying event
+      dict or update structure).
+    - ``counts``: dict with counts of adds, updates, removes.
+
+    A ``datetime`` Jinja2 filter is available for formatting datetimes as
+    "YYYY-MM-DD HH:MM".
     """
 
     if not settings.enabled:

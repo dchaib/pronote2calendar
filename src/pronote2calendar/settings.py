@@ -71,24 +71,18 @@ class NotificationsTemplates(BaseSettings):
     title: str = Field(default="Pronote2Calendar sync")
     body: str = Field(
         default="""Changes detected during synchronization:
-{%- if adds %}
-{%- for ev in adds %}
-- Added: {{ ev.summary }} ({{ ev.start }} - {{ ev.end }})
-{%- endfor %}
-{%- endif %}
-{%- if updates %}
-{%- for ev in updates %}
-- Updated: {{ ev.new.summary }} ({{ ev.start }})
-{%- for field, pair in ev.changes.items() %}
+{%- for change in changes %}
+{%- if change.type == "add" %}
+- Added: {{ change.summary }} ({{ change.start | datetime }})
+{%- elif change.type == "update" %}
+- Updated: {{ change.summary }} ({{ change.start | datetime }})
+{%- for field, pair in change.data.changes.items() %}
   - {{ field }}: {{ pair[0] }} → {{ pair[1] }}
 {%- endfor %}
-{%- endfor %}
+{%- elif change.type == "remove" %}
+- Removed: {{ change.summary }} ({{ change.start | datetime }})
 {%- endif %}
-{%- if removes %}
-{%- for ev in removes %}
-- Removed: {{ ev.summary }} ({{ ev.start }} - {{ ev.end }})
-{%- endfor %}
-{%- endif %}"""
+{%- endfor %}"""
     )
 
 

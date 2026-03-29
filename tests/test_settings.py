@@ -78,7 +78,7 @@ class TestPronoteSettings:
         ns = NotificationsTemplates()
         body = ns.body
         assert "changes" in body
-        assert "old" in body or "new" in body
+        assert "change.data.changes" in body  # for updates
 
     def test_custom_values(self):
         """Test that PronoteSettings accepts custom values."""
