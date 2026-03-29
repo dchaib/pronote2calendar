@@ -73,6 +73,13 @@ class TestPronoteSettings:
         assert settings.account_type == "child"
         assert settings.child is None
 
+    def test_notifications_template_contains_diff(self):
+        """Default notification template should mention diff keys."""
+        ns = NotificationsTemplates()
+        body = ns.body
+        assert "changes" in body
+        assert "old" in body or "new" in body
+
     def test_custom_values(self):
         """Test that PronoteSettings accepts custom values."""
         settings = PronoteSettings(

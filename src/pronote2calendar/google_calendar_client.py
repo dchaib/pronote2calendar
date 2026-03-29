@@ -6,8 +6,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build  # type: ignore
 from googleapiclient.errors import HttpError  # type: ignore
 
-from pronote2calendar.change_detection import ChangeSet
-from pronote2calendar.event_creator import LessonEvent
+from pronote2calendar.models import CalendarEvent, ChangeSet, LessonEvent
 from pronote2calendar.settings import GoogleCalendarSettings
 
 logger = logging.getLogger(__name__)
@@ -19,6 +18,30 @@ SCOPES = [
 EXTENDED_PROPERTY_SOURCE = "pronote2calendar"
 
 
+def _event_from_calendar_dict(calendar_dict: dict[str, Any]) -> CalendarEvent:
+    event_id = calendar_dict.get("id")
+    if not isinstance(event_id, str):
+        raise ValueError("Missing or invalid 'id'")
+
+    start_raw = calendar_dict.get("start", {})
+    end_raw = calendar_dict.get("end", {})
+
+    start_str = start_raw.get("dateTime") or start_raw.get("date")
+    end_str = end_raw.get("dateTime") or end_raw.get("date")
+
+    if not isinstance(start_str, str) or not isinstance(end_str, str):
+        raise ValueError("Missing or invalid start/end")
+
+    return CalendarEvent(
+        id=event_id,
+        start=datetime.fromisoformat(start_str),
+        end=datetime.fromisoformat(end_str),
+        summary=calendar_dict.get("summary"),
+        location=calendar_dict.get("location"),
+        description=calendar_dict.get("description"),
+    )
+
+
 class GoogleCalendarClient:
     def __init__(self, config: GoogleCalendarSettings, credentials_file_path: str):
         credentials = service_account.Credentials.from_service_account_file(
@@ -27,7 +50,7 @@ class GoogleCalendarClient:
         self.service = build("calendar", "v3", credentials=credentials)
         self.calendar_id = config.calendar_id
 
-    def get_events(self, start: datetime, end: datetime) -> list[dict[str, Any]]:
+    def get_events(self, start: datetime, end: datetime) -> list[CalendarEvent]:
         try:
             events_result = (
                 self.service.events()
@@ -46,7 +69,7 @@ class GoogleCalendarClient:
             logger.debug(
                 "Retrieved %d events from calendar %s", len(events), self.calendar_id
             )
-            return events
+            return [_event_from_calendar_dict(event_dict) for event_dict in events]
 
         except HttpError as error:
             logger.exception("Error fetching events from Google Calendar: %s", error)
@@ -84,7 +107,7 @@ class GoogleCalendarClient:
         # Remove events
         remove_count = 0
         for event_to_remove in changes.to_remove:
-            event_id = event_to_remove["id"]
+            event_id = event_to_remove.id
             self.service.events().delete(
                 calendarId=self.calendar_id, eventId=event_id
             ).execute()
@@ -92,10 +115,10 @@ class GoogleCalendarClient:
 
         # Update existing events
         update_count = 0
-        for event_id, event in changes.to_update.items():
-            event_body = create_event_body(event, is_update=True)
+        for update_diff in changes.to_update:
+            event_body = create_event_body(update_diff.new, is_update=True)
             self.service.events().patch(
-                calendarId=self.calendar_id, eventId=event_id, body=event_body
+                calendarId=self.calendar_id, eventId=update_diff.id, body=event_body
             ).execute()
             update_count += 1
 

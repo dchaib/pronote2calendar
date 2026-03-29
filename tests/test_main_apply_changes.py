@@ -1,11 +1,14 @@
 from pronote2calendar import main as main_mod
-from pronote2calendar.change_detection import ChangeSet
+from pronote2calendar.models import ChangeSet
 from pronote2calendar.settings import (
     AjustmentsSettings,
     EventsSettings,
     NotificationsSettings,
     SyncSettings,
 )
+
+# retain the original Settings class so our helper can avoid overwriting it
+_orig_Settings = main_mod.Settings
 
 
 class DummyCalendar:
@@ -34,17 +37,20 @@ def run_main_with_changes(monkeypatch, changes_value):
     # Patch setup_logging
     monkeypatch.setattr(main_mod, "setup_logging", lambda level: None)
 
-    # Create a mock Settings object
-    class MockSettings:
-        log_level = "INFO"
-        sync = SyncSettings(weeks=3)
-        adjustments = AjustmentsSettings()
-        events = EventsSettings()
-        notifications = NotificationsSettings()  # new field
-        pronote = None
-        google_calendar = None
+    # allow tests to patch Settings beforehand; only create a default if
+    # nothing has been changed yet
+    if main_mod.Settings is _orig_Settings:
 
-    monkeypatch.setattr(main_mod, "Settings", MockSettings)
+        class MockSettings:
+            log_level = "INFO"
+            sync = SyncSettings(weeks=3)
+            adjustments = AjustmentsSettings()
+            events = EventsSettings()
+            notifications = NotificationsSettings()  # new field
+            pronote = None
+            google_calendar = None
+
+        monkeypatch.setattr(main_mod, "Settings", MockSettings)
 
     # Patch PronoteClient and GoogleCalendarClient
     monkeypatch.setattr(main_mod, "PronoteClient", lambda *a, **k: DummyPronote())
@@ -70,7 +76,7 @@ def test_main_sends_notifications_when_configured(monkeypatch):
         main_mod, "send_notifications", lambda ns, ch: calls.append((ns, ch))
     )
     # prepare changes
-    changes = ChangeSet([1], {}, [])
+    changes = ChangeSet([1], [], [])
 
     # override Settings to enable notifications and give a destination
     class MockSettingsEnabled:
@@ -93,7 +99,7 @@ def test_main_skips_notifications_when_empty(monkeypatch):
     monkeypatch.setattr(
         main_mod, "send_notifications", lambda ns, ch: calls.append((ns, ch))
     )
-    changes = ChangeSet([1], {}, [])
+    changes = ChangeSet([1], [], [])
 
     # override settings to have empty destinations list
     class MockSettings2:
@@ -101,7 +107,8 @@ def test_main_skips_notifications_when_empty(monkeypatch):
         sync = SyncSettings(weeks=3)
         adjustments = AjustmentsSettings()
         events = EventsSettings()
-        notifications = NotificationsSettings(destinations=[])
+        # even though destinations is empty we still turn notifications on
+        notifications = NotificationsSettings(destinations=[], enabled=True)
         pronote = None
         google_calendar = None
 
@@ -113,12 +120,12 @@ def test_main_skips_notifications_when_empty(monkeypatch):
 
 
 def test_main_skips_apply_when_no_changes(monkeypatch):
-    changes = ChangeSet([], {}, [])
+    changes = ChangeSet([], [], [])
     dummy_cal = run_main_with_changes(monkeypatch, changes)
     assert not dummy_cal.applied
 
 
 def test_main_applies_when_changes_present(monkeypatch):
-    changes = ChangeSet([1], {}, [])
+    changes = ChangeSet([1], [], [])
     dummy_cal = run_main_with_changes(monkeypatch, changes)
     assert dummy_cal.applied

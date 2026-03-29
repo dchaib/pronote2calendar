@@ -68,15 +68,27 @@ class EventsSettings(BaseSettings):
 
 
 class NotificationsTemplates(BaseSettings):
-    # Jinja2 templates; context will include 'adds','updates','removes','changes' lists
     title: str = Field(default="Pronote2Calendar sync")
     body: str = Field(
-        default="""
-Changes detected during synchronization:\n
-{% for ev in adds %}- Added: {{ ev.summary }} ({{ ev.start }} - {{ ev.end }})\n  {{ ev.location }} {{ ev.description }}\n{% endfor %}
-{% for ev in updates %}- Updated: {{ ev.summary }} ({{ ev.start }} - {{ ev.end }})\n  {{ ev.location }} {{ ev.description }}\n{% endfor %}
-{% for ev in removes %}- Removed: {{ ev.summary }} ({{ ev.start }} - {{ ev.end }})\n  {{ ev.location }} {{ ev.description }}\n{% endfor %}
-"""
+        default="""Changes detected during synchronization:
+{%- if adds %}
+{%- for ev in adds %}
+- Added: {{ ev.summary }} ({{ ev.start }} - {{ ev.end }})
+{%- endfor %}
+{%- endif %}
+{%- if updates %}
+{%- for ev in updates %}
+- Updated: {{ ev.new.summary }} ({{ ev.start }})
+{%- for field, pair in ev.changes.items() %}
+  - {{ field }}: {{ pair[0] }} → {{ pair[1] }}
+{%- endfor %}
+{%- endfor %}
+{%- endif %}
+{%- if removes %}
+{%- for ev in removes %}
+- Removed: {{ ev.summary }} ({{ ev.start }} - {{ ev.end }})
+{%- endfor %}
+{%- endif %}"""
     )
 
 

@@ -112,9 +112,22 @@ sync:
   - **enabled**: boolean to turn the notification feature on. Defaults to `false` (disabled).
   - **destinations**: a list of service URLs or paths to configuration files understood by Apprise. See https://github.com/caronc/apprise for supported services; you can combine multiple entries and use the same syntax you would use in an Apprise config file.
   - **max_delay_days**: only changes whose start time is at or before *now + this many days* are included in the notification. Default: 3.
-  - **templates**: Jinja2 templates for the notification title and body. The context provides `adds`, `updates`, `removes` and `changes` lists; each element contains `summary`, `start`, `end`, `location`, and `description`.
+  - **templates**: Jinja2 templates for the notification title and body. The context provides `adds`, `updates`, `removes` and `changes` lists; each element contains `summary`, `start`, `end`, `location`, and `description`.  
+    *For updates the item is a dictionary with `old`/`new` sub‑dictionaries and a `changes` map showing which fields were modified (each value is an `(old, new)` tuple); top‑level `summary`, `start`, `end`, `location` and `description` reflect the new values for compatibility.*
 
-    Default title is `Pronote2Calendar sync`; default body lists all adds/updates/removes.
+    Default title is `Pronote2Calendar sync`; default body lists all adds/updates/removes and, for updates, shows only the fields that changed.
+
+    Here is an example snippet you could use to render only the changed fields
+    for updates:
+
+    ```jinja
+    {% for ev in updates %}
+    - {{ ev.old.summary }} → {{ ev.new.summary }}
+      {% for field, pair in ev.changes.items() %}
+        {{ field }}: {{ pair[0] }} → {{ pair[1] }}
+      {% endfor %}
+    {% endfor %}
+    ```
 
 
 #### Optional: Time Adjustments
