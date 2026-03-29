@@ -108,31 +108,11 @@ sync:
   - **calendar_id**: The **ID** of your Google Calendar (can be found in Google Calendar settings).
 * **sync**
   - **weeks**: The number of weeks (including the current one) to sync. Example: If set to `3`, it will sync the current week and the next 2 weeks. This parameter is optional. If not specified, the default value is `3`. The minimum is `1`.
-* **notifications** (optional)
-  - **enabled**: boolean to turn the notification feature on. Defaults to `false` (disabled).
-  - **destinations**: a list of service URLs or paths to configuration files understood by Apprise. See https://github.com/caronc/apprise for supported services; you can combine multiple entries and use the same syntax you would use in an Apprise config file.
-  - **max_delay_days**: only changes whose start time is at or before *now + this many days* are included in the notification. Default: 3.
-  - **templates**: Jinja2 templates for the notification title and body. The context provides `adds`, `updates`, `removes` and `changes` lists; each element contains `summary`, `start`, `end`, `location`, and `description`.  
-    *For updates the item is a dictionary with `old`/`new` sub‑dictionaries and a `changes` map showing which fields were modified (each value is an `(old, new)` tuple); top‑level `summary`, `start`, `end`, `location` and `description` reflect the new values for compatibility.*
-
-    Default title is `Pronote2Calendar sync`; default body lists all adds/updates/removes and, for updates, shows only the fields that changed.
-
-    Here is an example snippet you could use to render only the changed fields
-    for updates:
-
-    ```jinja
-    {% for ev in updates %}
-    - {{ ev.old.summary }} → {{ ev.new.summary }}
-      {% for field, pair in ev.changes.items() %}
-        {{ field }}: {{ pair[0] }} → {{ pair[1] }}
-      {% endfor %}
-    {% endfor %}
-    ```
 
 
 #### Optional: Time Adjustments
 
-You can adjust lesson times for specific weekdays and time slots. This is useful if Pronote displays different times than the actual class times. Use the `time_adjustments` field:
+You can adjust lesson times for specific weekdays and time slots. This is useful if Pronote displays different times than the actual class times. Use the `time` field under `adjustments`:
 
 ```yaml
 pronote: { ... }
@@ -180,9 +160,6 @@ adjustments:
 
 For example, the mapping above will replace "Sciences de la Vie et de la Terre" with "SVT" for all lessons with that subject. Any subject not in the mapping will remain unchanged.
 
-#### Change Notifications
-
-You can request a summary notification after each synchronization. Configure the `notifications` section (see above) with one or more destinations (URLs or config files) and optional templates; a single message listing all adds, updates and removals will be sent if any changes fall within the configured delay window.
 
 #### Optional: Event Templates
 
@@ -265,6 +242,70 @@ events:
     
     # Conditional example (using Jinja2 filters)
     description: "{% if teacher_name %}Teacher: {{ teacher_name }}{% endif %}"
+```
+
+#### Optional: Change Notifications
+
+You can send a summary notification after each synchronization, listing all lessons that were added, updated, or removed. Notifications are sent via [Apprise](https://appriseit.com/), which supports many services (email, Telegram, Slack, etc.). Use the `notifications` section.
+
+```yaml
+pronote: { ... }
+google_calendar: { ... }
+sync: { ... }
+adjustments: { ... }
+notifications:
+  enabled: false
+  destinations: []
+  max_delay_days: 3
+  templates:
+    title: Pronote2Calendar sync
+    body: >
+      Changes detected during synchronization:
+      {%- for change in changes %}
+      {%- if change.type == "add" %}
+      - Added: {{ change.summary }} ({{ change.start | datetime }})
+      {%- elif change.type == "update" %}
+      - Updated: {{ change.summary }} ({{ change.start | datetime }})
+      {%- for field, pair in change.data.changes.items() %}
+        - {{ field }}: {{ pair[0] }} → {{ pair[1] }}
+      {%- endfor %}
+      {%- elif change.type == "remove" %}
+      - Removed: {{ change.summary }} ({{ change.start | datetime }})
+      {%- endif %}
+      {%- endfor %}
+```
+
+* **enabled**: A boolean to turn the notification feature on. Defaults to `false` (disabled).
+* **destinations**: A list of service URLs or paths to configuration files understood by Apprise. See https://github.com/caronc/apprise for supported services; you can combine multiple entries and use the same syntax you would use in an Apprise config file.
+* **max_delay_days**: Only changes whose start time is at or before *now + this many days* are included in the notification. Default: 3.
+* **templates**: Jinja2 templates for the notifications
+  - **title**
+  - **body**.
+
+##### Templates
+The template context provides:
+* `adds`, `updates`, `removes`: Lists of changes, each element contains `summary`, `start`, `end`, `location`, and `description`
+* `changes`: A list of all changes, sorted by start time. Each item has:
+  - `type`: "add", "update" or "remove",
+  - `start`, `summary`, `end`, `location`, `description`
+  - `data`:
+    - For adds/removes: the full event dictionary
+    - For updates: a dictionary containing `old`, `new`, and `changes` (mapping changed fields to `(old, new)` tuples)
+* `counts`: A dict with counts of `adds`, `updates` and `removes`.
+
+A `datetime` filter is available in templates to format datetimes (default format: `"YYYY-MM-DD HH:MM"`). You can also override the format in templates:
+```jinja
+{{ change.start | datetime("%d/%m %H:%M") }}
+```
+
+##### Example Notification Output
+```
+Changes detected during synchronization:
+- Added: Math (2026-03-30 08:00)
+- Updated: English (2026-03-30 10:00)
+  - classroom: Room 101 → Room 102
+  - teacher_name: Mr. Smith → Ms. Johnson
+- Removed: History (2026-03-31 09:00)
 ```
 
 ### 2. Create your Docker Compose file
