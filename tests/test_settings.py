@@ -7,6 +7,8 @@ from pydantic import ValidationError
 
 from pronote2calendar.settings import (
     GoogleCalendarSettings,
+    NotificationsSettings,
+    NotificationsTemplates,
     PronoteSettings,
     Settings,
     SyncSettings,
@@ -70,6 +72,13 @@ class TestPronoteSettings:
         assert settings.connection_type == "token"
         assert settings.account_type == "child"
         assert settings.child is None
+
+    def test_notifications_template_contains_diff(self):
+        """Default notification template should mention diff keys."""
+        ns = NotificationsTemplates()
+        body = ns.body
+        assert "changes" in body
+        assert "change.data.changes" in body  # for updates
 
     def test_custom_values(self):
         """Test that PronoteSettings accepts custom values."""
@@ -592,5 +601,56 @@ adjustments:
                 assert len(settings.adjustments.time) == 1
                 assert settings.adjustments.subject["Physique-Chimie"] == "Physique"
                 assert settings.adjustments.subject["SVT"] == "Sciences"
+            finally:
+                os.chdir(original_cwd)
+
+    # ---------- new notification setting tests ----------
+    def test_notification_settings_defaults(self):
+        """Ensure default notification settings are sane."""
+        ns = NotificationsSettings()
+        assert ns.destinations == []
+        assert ns.max_delay_days == 3
+        assert not ns.enabled
+        assert isinstance(ns.templates, NotificationsTemplates)
+        assert "Changes detected" in ns.templates.body
+
+    def test_notification_settings_validation(self):
+        """Negative max_delay_days should raise a validation error."""
+        with pytest.raises(ValidationError):
+            NotificationsSettings(max_delay_days=-1)
+
+    def test_notification_settings_from_yaml(self):
+        """YAML configuration properly loads notifications section."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "config.yaml"
+            config_path.write_text(
+                """
+google_calendar:
+  calendar_id: test@gmail.com
+notifications:
+  enabled: true
+  destinations:
+    - "email://user:pass@example.com"
+  max_delay_days: 1
+  templates:
+    title: "My sync"
+    body: "{{ adds|length }} added"
+"""
+            )
+            original_cwd = Path.cwd()
+            try:
+                import os
+
+                os.chdir(tmpdir)
+                settings = Settings()
+                assert settings.notifications.destinations == [
+                    "email://user:pass@example.com"
+                ]
+                assert settings.notifications.max_delay_days == 1
+                assert settings.notifications.enabled
+                assert settings.notifications.templates.title == "My sync"
+                assert (
+                    settings.notifications.templates.body == "{{ adds|length }} added"
+                )
             finally:
                 os.chdir(original_cwd)

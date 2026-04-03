@@ -2,18 +2,18 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from pronote2calendar.change_detection import get_changes
-from pronote2calendar.event_creator import LessonEvent
+from pronote2calendar.models import CalendarEvent, LessonEvent
 
 
-def create_dummy_event(id, summary, start, end, description, location):
-    return {
-        "id": id,
-        "summary": summary,
-        "start": {"dateTime": start.isoformat(), "timeZone": "UTC"},
-        "end": {"dateTime": end.isoformat(), "timeZone": "UTC"},
-        "description": description,
-        "location": location,
-    }
+def create_dummy_event(id, summary, start, end, description, location) -> CalendarEvent:
+    return CalendarEvent(
+        id=id,
+        start=start,
+        end=end,
+        summary=summary,
+        description=description,
+        location=location,
+    )
 
 
 def test_get_changes_add_and_remove():
@@ -39,7 +39,7 @@ def test_get_changes_add_and_remove():
     assert len(changes.to_remove) == 1
     assert len(changes.to_update) == 0
     removed = changes.to_remove[0]
-    assert removed["id"] == "e1"
+    assert removed.id == "e1"
 
 
 def test_get_changes_update_when_different():
@@ -69,9 +69,13 @@ def test_get_changes_update_when_different():
     assert len(changes.to_add) == 0
     assert len(changes.to_remove) == 0
     assert len(changes.to_update) == 1
-    id, updated = next(iter(changes.to_update.items()))
-    assert id == "e2"
-    assert updated.summary == "Math"
+    diff = changes.to_update[0]
+    assert diff.id == "e2"
+    assert diff.old.summary == "Old summary"
+    assert diff.new.summary == "Math"
+    # changes should list every field that differs
+    assert set(diff.changes.keys()) == {"summary", "end", "location", "description"}
+    assert diff.changes["summary"] == ("Old summary", "Math")
 
 
 def test_get_changes_no_change_when_identical():
@@ -92,7 +96,7 @@ def test_get_changes_no_change_when_identical():
 
     assert changes.to_add == []
     assert changes.to_remove == []
-    assert changes.to_update == {}
+    assert changes.to_update == []
 
 
 def test_get_changes_remove_duplicate_events():
@@ -115,6 +119,6 @@ def test_get_changes_remove_duplicate_events():
 
     assert changes.to_add == []
     assert len(changes.to_remove) == 1
-    assert changes.to_update == {}
+    assert changes.to_update == []
     removed = changes.to_remove[0]
-    assert removed["id"] in ["e4", "e5"]
+    assert removed.id in ["e4", "e5"]

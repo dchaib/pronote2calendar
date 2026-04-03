@@ -1,27 +1,18 @@
 import logging
 from collections import defaultdict
-from dataclasses import dataclass
-from typing import Any
 
-from pronote2calendar.event_creator import LessonEvent
+from pronote2calendar.models import CalendarEvent, ChangeSet, LessonEvent, UpdateDiff
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ChangeSet:
-    to_add: list[LessonEvent]
-    to_update: dict[Any, LessonEvent]
-    to_remove: list[dict[str, Any]]
-
-
 def get_changes(
     new_events: list[LessonEvent],
-    existing_events: list[dict[str, Any]],
+    existing_events: list[CalendarEvent],
 ) -> ChangeSet:
     add: list[LessonEvent] = []
-    remove: list[dict[str, Any]] = []
-    update: dict[Any, LessonEvent] = {}
+    remove: list[CalendarEvent] = []
+    update: list[UpdateDiff] = []
 
     # Map new events to their start time
     new_events_dict = {event.start.isoformat(): event for event in new_events}
@@ -30,9 +21,9 @@ def get_changes(
 
     # Map existing events to their start time,
     # allowing for multiple events at the same time
-    existing_events_map = defaultdict(list)
+    existing_events_map: defaultdict[str, list[CalendarEvent]] = defaultdict(list)
     for event in existing_events:
-        start_time = event["start"].get("dateTime", event["start"].get("date"))
+        start_time = event.start.isoformat()
         existing_events_map[start_time].append(event)
 
     logger.debug(
@@ -49,10 +40,10 @@ def get_changes(
                 event
                 for event in existing_events_map[start_time]
                 if (
-                    event.get("end", {}).get("dateTime") == new_event.end.isoformat()
-                    and event.get("summary") == new_event.summary
-                    and event.get("location") == new_event.location
-                    and event.get("description") == new_event.description
+                    event.end == new_event.end
+                    and event.summary == new_event.summary
+                    and event.location == new_event.location
+                    and event.description == new_event.description
                 )
             ]
 
@@ -68,9 +59,29 @@ def get_changes(
                     ]
                 )
             else:
-                # If no matching event is found, update the first event
-                # and remove others
-                update[existing_events_map[start_time][0]["id"]] = new_event
+                # If no matching event is found, build a diff object for
+                # the first existing event and record it as an update.
+                old_event = existing_events_map[start_time][0]
+
+                changes_map = {
+                    "summary": (old_event.summary, new_event.summary),
+                    "start": (old_event.start.isoformat(), new_event.start.isoformat()),
+                    "end": (old_event.end.isoformat(), new_event.end.isoformat()),
+                    "location": (old_event.location, new_event.location),
+                    "description": (old_event.description, new_event.description),
+                }
+                # Only include changed fields
+                changes_map = {k: v for k, v in changes_map.items() if v[0] != v[1]}
+
+                update.append(
+                    UpdateDiff(
+                        id=old_event.id,
+                        old=old_event,
+                        new=new_event,
+                        changes=changes_map,
+                    )
+                )
+                # still remove any duplicates
                 remove.extend(existing_events_map[start_time][1:])
 
     # Check events to remove that don't have a matching new event
@@ -88,8 +99,8 @@ def get_changes(
 
     for item_to_add in changes.to_add:
         logger.debug("ADD: %r", item_to_add)
-    for id, item_to_update in changes.to_update.items():
-        logger.debug("UPDATE (id %s): %r", id, item_to_update)
+    for item_to_update in changes.to_update:
+        logger.debug("UPDATE (id %s): %r", item_to_update.id, item_to_update)
     for item_to_remove in changes.to_remove:
         logger.debug("REMOVE: %r", item_to_remove)
 

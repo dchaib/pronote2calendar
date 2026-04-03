@@ -67,6 +67,42 @@ class EventsSettings(BaseSettings):
     templates: EventsTemplates = Field(default_factory=EventsTemplates)
 
 
+class NotificationsTemplates(BaseSettings):
+    title: str = Field(default="Pronote2Calendar sync")
+    body: str = Field(
+        default="""Changes detected during synchronization:
+{%- for change in changes %}
+{%- if change.type == "add" %}
+- Added: {{ change.summary }} ({{ change.start | datetime }})
+{%- elif change.type == "update" %}
+- Updated: {{ change.summary }} ({{ change.start | datetime }})
+{%- for field, pair in change.data.changes.items() %}
+  - {{ field }}: {{ pair[0] }} → {{ pair[1] }}
+{%- endfor %}
+{%- elif change.type == "remove" %}
+- Removed: {{ change.summary }} ({{ change.start | datetime }})
+{%- endif %}
+{%- endfor %}"""
+    )
+
+
+class NotificationsSettings(BaseSettings):
+    enabled: bool = Field(
+        default=False,
+        description="Whether notifications are enabled (default false)",
+    )
+    destinations: list[str] = Field(
+        default_factory=list,
+        description="List of notification service URLs or config paths",
+    )
+    max_delay_days: int = Field(
+        default=3,
+        ge=0,
+        description="Only notify about changes with start <= now + this many days",
+    )
+    templates: NotificationsTemplates = Field(default_factory=NotificationsTemplates)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(yaml_file=Path("config.yaml"))
 
@@ -76,6 +112,7 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO")
     adjustments: AjustmentsSettings = Field(default_factory=AjustmentsSettings)
     events: EventsSettings = Field(default_factory=EventsSettings)
+    notifications: NotificationsSettings = Field(default_factory=NotificationsSettings)
 
     @classmethod
     def settings_customise_sources(

@@ -1,22 +1,12 @@
 import logging
-from dataclasses import dataclass
-from datetime import datetime
 
 from jinja2 import Environment, StrictUndefined
 from pronotepy import Lesson
 
+from pronote2calendar.models import LessonEvent
 from pronote2calendar.settings import EventsTemplates
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class LessonEvent:
-    start: datetime
-    end: datetime
-    summary: str | None
-    description: str | None
-    location: str | None
 
 
 def build_context(lesson: Lesson) -> dict:
