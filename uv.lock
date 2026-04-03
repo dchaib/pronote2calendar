@@ -466,7 +466,7 @@ requires-dist = [
     { name = "email-validator", specifier = "==2.3.0" },
     { name = "google-api-python-client", specifier = "==2.193.0" },
     { name = "jinja2", specifier = "==3.1.6" },
-    { name = "pronotepy", specifier = "==2.14.5" },
+    { name = "pronotepy", specifier = "==2.14.6" },
     { name = "pydantic-settings", extras = ["yaml"], specifier = "==2.13.1" },
 ]
 
@@ -479,7 +479,7 @@ dev = [
 
 [[package]]
 name = "pronotepy"
-version = "2.14.5"
+version = "2.14.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "autoslot" },
@@ -487,9 +487,9 @@ dependencies = [
     { name = "pycryptodome" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/61/3e/26b8791c96aae9dc3370bfc3142c445fcc7959ec705b02873ed41fc5acd2/pronotepy-2.14.5.tar.gz", hash = "sha256:8231cfff532b55a454833bf53daf4b7b5e02ae8ad512520ad014f40dc28fbe8c", size = 44254, upload-time = "2025-09-03T21:33:59.571Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/02/f9f6d67512859a26c6c93ac52b39d13a24a81ccb3fbb8bc9597dd79447b5/pronotepy-2.14.6.tar.gz", hash = "sha256:2153f7828cb1ff7fae7b72ab3b4164fc128b025534d09ff664815be9a357401a", size = 45719, upload-time = "2026-03-22T23:02:59.725Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/eb/d7/9a1bd8898ee1265c2ed34a2fa8f4d162747bd95066b07bee1be824ec12a0/pronotepy-2.14.5-py3-none-any.whl", hash = "sha256:38b6b75afa4311f666bf57bac4d60a275a0b0059d12467ee761f6796ae9e9125", size = 45956, upload-time = "2025-09-03T21:33:58.601Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/36/f58c61fe0badc02a8a9416a9c43433ea242c20e2e393befbeef098e6bee2/pronotepy-2.14.6-py3-none-any.whl", hash = "sha256:754c7051a276d61e8355bef3a31c5b3fe665bc3de72762600a39cc399dc90eaf", size = 47617, upload-time = "2026-03-22T23:02:58.491Z" },
 ]
 
 [[package]]
