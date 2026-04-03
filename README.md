@@ -109,7 +109,6 @@ sync:
 * **sync**
   - **weeks**: The number of weeks (including the current one) to sync. Example: If set to `3`, it will sync the current week and the next 2 weeks. This parameter is optional. If not specified, the default value is `3`. The minimum is `1`.
 
-
 #### Optional: Time Adjustments
 
 You can adjust lesson times for specific weekdays and time slots. This is useful if Pronote displays different times than the actual class times. Use the `time` field under `adjustments`:
@@ -159,7 +158,6 @@ adjustments:
   - Each value is the adjusted subject name that will be displayed in Google Calendar.
 
 For example, the mapping above will replace "Sciences de la Vie et de la Terre" with "SVT" for all lessons with that subject. Any subject not in the mapping will remain unchanged.
-
 
 #### Optional: Event Templates
 
@@ -303,8 +301,8 @@ A `datetime` filter is available in templates to format datetimes (default forma
 Changes detected during synchronization:
 - Added: Math (2026-03-30 08:00)
 - Updated: English (2026-03-30 10:00)
-  - classroom: Room 101 → Room 102
-  - teacher_name: Mr. Smith → Ms. Johnson
+  - location: Room 101 → Room 102
+  - description: Mr. Smith → Ms. Johnson
 - Removed: History (2026-03-31 09:00)
 ```
 
