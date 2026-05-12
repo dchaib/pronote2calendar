@@ -15,7 +15,7 @@ jobs:
         include:
           - name: ubuntu
           - name: alpine
-            container: python:3.14.3-alpine3.23
+            container: python:3.14.5-alpine3.23
 
     container: ${{ matrix.container }}
 
