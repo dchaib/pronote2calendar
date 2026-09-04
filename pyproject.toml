@@ -5,7 +5,7 @@ description = "A simple tool to export your Pronote timetable to Google Calendar
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "pronotepy (==2.14.6)",
+    "pronotepy (==2.15.7)",
     "google-api-python-client (==2.200.0)",
     "pydantic-settings[yaml] (==2.15.0)",
     "email-validator (==2.3.0)",
