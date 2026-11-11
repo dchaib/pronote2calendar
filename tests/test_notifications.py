@@ -2,10 +2,32 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
+from apprise import (  # type: ignore
+    AppriseResult,
+    AppriseResultStatus,
+    NotifyAttempt,
+    NotifyResult,
+)
 
 from pronote2calendar.models import CalendarEvent, ChangeSet, LessonEvent
 from pronote2calendar.notifications import send_notifications
 from pronote2calendar.settings import NotificationsSettings, NotificationsTemplates
+
+
+def make_delivery_result(status=AppriseResultStatus.SUCCESS, service_statuses=None):
+    if service_statuses is None:
+        service_statuses = [status]
+    return AppriseResult(
+        status=status,
+        results=[
+            NotifyResult(
+                name="Test service",
+                url="test://redacted",
+                attempts=[NotifyAttempt(status=service_status)],
+            )
+            for service_status in service_statuses
+        ],
+    )
 
 
 class DummyApprise:
@@ -16,10 +38,12 @@ class DummyApprise:
 
     def add(self, url):
         self.urls.append(url)
+        return True
 
     def notify(self, title=None, body=None):
         self.notified = True
         self.last = {"title": title, "body": body}
+        return make_delivery_result()
 
 
 @pytest.fixture(autouse=True)
@@ -53,6 +77,7 @@ def test_disabled(monkeypatch):
     class Cap(DummyApprise):
         def notify(self, title=None, body=None):
             called.append(True)
+            return make_delivery_result()
 
     monkeypatch.setattr("pronote2calendar.notifications.Apprise", lambda: Cap())
     send_notifications(ns, changes)
@@ -93,6 +118,7 @@ def test_filtering_by_delay(monkeypatch):
             captured["title"] = title
             captured["body"] = body
             self.notified = True
+            return make_delivery_result()
 
     monkeypatch.setattr("pronote2calendar.notifications.Apprise", lambda: Cap())
     send_notifications(ns, changes, now=now)
@@ -116,6 +142,7 @@ def test_no_notification_if_all_out_of_range():
     class CapturingApprise(DummyApprise):
         def notify(self, title=None, body=None):
             notified.append((title, body))
+            return make_delivery_result()
 
     import pronote2calendar.notifications as notif_mod
 
@@ -163,6 +190,7 @@ def test_template_rendering(monkeypatch):
         def notify(self, title=None, body=None):
             captured["title"] = title
             captured["body"] = body
+            return make_delivery_result()
 
     monkeypatch.setattr("pronote2calendar.notifications.Apprise", lambda: Cap())
     send_notifications(ns, changes, now=now)
@@ -200,6 +228,7 @@ def test_default_template_includes_diff_details(monkeypatch):
         def notify(self, title=None, body=None):
             captured["title"] = title
             captured["body"] = body
+            return make_delivery_result()
 
     monkeypatch.setattr("pronote2calendar.notifications.Apprise", lambda: Cap())
     send_notifications(ns, changes, now=now)
@@ -309,7 +338,44 @@ def test_datetime_filter(monkeypatch):
         def notify(self, title=None, body=None):
             captured["title"] = title
             captured["body"] = body
+            return make_delivery_result()
 
     monkeypatch.setattr("pronote2calendar.notifications.Apprise", lambda: Cap())
     send_notifications(ns, changes, now=now)
     assert captured["body"] == "2026-03-01 12:30"
+
+
+def test_invalid_destination_fails_before_notify(monkeypatch, caplog):
+    class InvalidApprise(DummyApprise):
+        def add(self, url):
+            return False
+
+        def notify(self, **kwargs):
+            pytest.fail("Invalid destination must prevent dispatch")
+
+    monkeypatch.setattr("pronote2calendar.notifications.Apprise", InvalidApprise)
+    settings = NotificationsSettings(enabled=True, destinations=["secret-url"])
+    assert send_notifications(settings, ChangeSet([make_event(0)], [], [])) is False
+    assert "destination #1" in caplog.text
+    assert "secret-url" not in caplog.text
+
+
+@pytest.mark.parametrize(
+    "status", [AppriseResultStatus.SUCCESS, AppriseResultStatus.FAILURE]
+)
+def test_delivery_outcome_and_cleanup(monkeypatch, status):
+    from unittest.mock import Mock
+
+    result = make_delivery_result(status)
+    close = Mock(wraps=result.close)
+    monkeypatch.setattr(result, "close", close)
+
+    class ResultApprise(DummyApprise):
+        def notify(self, **kwargs):
+            return result
+
+    monkeypatch.setattr("pronote2calendar.notifications.Apprise", ResultApprise)
+    settings = NotificationsSettings(enabled=True, destinations=["dummy"])
+    outcome = send_notifications(settings, ChangeSet([make_event(0)], [], []))
+    assert outcome is (status == AppriseResultStatus.SUCCESS)
+    close.assert_called_once_with()

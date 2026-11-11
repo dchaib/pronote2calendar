@@ -90,10 +90,10 @@ def get_changes(
             remove.extend(event_list)
 
     logger.debug(
-        "Change detection results: add=%d remove=%d update=%d",
+        "Change detection results: add=%d update=%d remove=%d",
         len(add),
-        len(remove),
         len(update),
+        len(remove),
     )
     changes = ChangeSet(add, update, remove)
 
