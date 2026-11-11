@@ -337,6 +337,7 @@ class TestSettings:
                 assert settings.pronote.account_type == "child"
                 assert settings.sync.weeks == 3
                 assert settings.log_level == "INFO"
+                assert settings.filters.excluded_subjects == []
                 assert settings.adjustments.time == []
             finally:
                 os.chdir(original_cwd)

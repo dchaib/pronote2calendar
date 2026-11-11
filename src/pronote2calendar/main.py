@@ -5,6 +5,7 @@ from pronote2calendar import change_detection
 from pronote2calendar.date_utils import compute_sync_period
 from pronote2calendar.event_creator import create_lesson_events
 from pronote2calendar.google_calendar_client import GoogleCalendarClient
+from pronote2calendar.lesson_filters import filter_lessons
 from pronote2calendar.logging_manager import setup_logging
 from pronote2calendar.notifications import send_notifications
 from pronote2calendar.pronote_client import PronoteClient
@@ -45,6 +46,7 @@ def main() -> int:
         logger.debug("Fetching lessons from Pronote")
         lessons = pronote.get_lessons(start, end)
         logger.info("Fetched %d lessons from Pronote", len(lessons))
+        lessons = filter_lessons(lessons, config.filters)
         lessons = apply_time_adjustments(lessons, config.adjustments.time)
         lessons = apply_subject_adjustments(lessons, config.adjustments.subject)
 

@@ -3,6 +3,7 @@ from pronote2calendar.models import ChangeSet
 from pronote2calendar.settings import (
     AjustmentsSettings,
     EventsSettings,
+    FiltersSettings,
     NotificationsSettings,
     SyncSettings,
 )
@@ -44,6 +45,7 @@ def run_main_with_changes(monkeypatch, changes_value):
         class MockSettings:
             log_level = "INFO"
             sync = SyncSettings(weeks=3)
+            filters = FiltersSettings()
             adjustments = AjustmentsSettings()
             events = EventsSettings()
             notifications = NotificationsSettings()  # new field
@@ -82,6 +84,7 @@ def test_main_sends_notifications_when_configured(monkeypatch):
     class MockSettingsEnabled:
         log_level = "INFO"
         sync = SyncSettings(weeks=3)
+        filters = FiltersSettings()
         adjustments = AjustmentsSettings()
         events = EventsSettings()
         notifications = NotificationsSettings(destinations=["dummy"], enabled=True)
@@ -105,6 +108,7 @@ def test_main_skips_notifications_when_empty(monkeypatch):
     class MockSettings2:
         log_level = "INFO"
         sync = SyncSettings(weeks=3)
+        filters = FiltersSettings()
         adjustments = AjustmentsSettings()
         events = EventsSettings()
         # even though destinations is empty we still turn notifications on
