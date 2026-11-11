@@ -12,7 +12,8 @@ from pronote2calendar.settings import Settings
 from pronote2calendar.subject_adjustments import apply_subject_adjustments
 from pronote2calendar.time_adjustments import apply_time_adjustments
 
-logger = logging.getLogger(__name__)
+# Keep the application logger when this module is executed with python -m.
+logger = logging.getLogger("pronote2calendar.main")
 
 
 def main() -> int:
