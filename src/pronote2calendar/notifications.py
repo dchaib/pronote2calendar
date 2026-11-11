@@ -142,7 +142,7 @@ def render_templates(
         title = env.from_string(settings.templates.title).render(context)
         body = env.from_string(settings.templates.body).render(context)
     except Exception as e:
-        logger.error("Failed to render notification templates: %s", e)
+        e.add_note("Failed to render notification templates")
         raise
 
     return title, body
@@ -151,22 +151,25 @@ def render_templates(
 def send_via_apprise(destinations: list[str], title: str, body: str) -> None:
     """Send notification via Apprise."""
     apobj = Apprise()
-    for entry in destinations:
-        apobj.add(entry)
-    try:
-        apobj.notify(title=title, body=body)
-        logger.info(
-            "Sent notification (%d destinations)",
-            len(destinations),
-        )
-    except Exception as e:
-        logger.exception("Error sending notification: %s", e)
+    for index, entry in enumerate(destinations, start=1):
+        if not apobj.add(entry):
+            raise ValueError(f"Invalid notification destination #{index}")
+    # Apprise v2 results own temporary log stores; close them after inspection.
+    with apobj.notify(title=title, body=body) as result:
+        if not result:
+            raise RuntimeError(
+                f"Notification delivery failed: status={result.status.name} "
+                f"success={result.success_count} failed={result.failed_count} "
+                f"timeout={result.timeout_count}"
+            )
 
 
 def send_notifications(
     settings: NotificationsSettings, changes: ChangeSet, now: datetime | None = None
-) -> None:
+) -> bool | None:
     """Send a single notification via Apprise summarizing the provided changes.
+
+    Returns True on delivery, False on failure, and None when skipped.
 
     If ``settings.enabled`` is False the function returns immediately.  The
     ``settings.destinations`` list may contain multiple service URLs or paths
@@ -201,15 +204,15 @@ def send_notifications(
 
     if not settings.enabled:
         logger.debug("Notifications disabled in configuration, skipping")
-        return
+        return None
 
     if not settings.destinations:
-        logger.debug("No notification destinations configured, skipping")
-        return
+        logger.warning("Notifications enabled without destinations; skipping")
+        return None
 
     if not (changes.to_add or changes.to_update or changes.to_remove):
         logger.debug("No changes detected, skipping notification")
-        return
+        return None
 
     now = now or datetime.now().astimezone()
     limit = now + timedelta(days=settings.max_delay_days)
@@ -218,12 +221,20 @@ def send_notifications(
 
     if not (adds or updates or removes):
         logger.debug("All changes are beyond max_delay_days, no notification sent")
-        return
+        return None
 
     context = prepare_notification_data(adds, updates, removes)
 
     title, body = render_templates(settings, context)
 
-    logger.info("Prepared notification with title: %s and body:\n%s", title, body)
+    logger.debug("Prepared notification: title=%r body=%r", title, body)
 
-    send_via_apprise(settings.destinations, title, body)
+    try:
+        send_via_apprise(settings.destinations, title, body)
+    except Exception:
+        logger.exception("Notification delivery failed")
+        return False
+    logger.info(
+        "Notification sent (%d configured destinations)", len(settings.destinations)
+    )
+    return True

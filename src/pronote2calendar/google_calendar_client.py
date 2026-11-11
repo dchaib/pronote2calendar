@@ -4,7 +4,6 @@ from typing import Any
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build  # type: ignore
-from googleapiclient.errors import HttpError  # type: ignore
 
 from pronote2calendar.models import CalendarEvent, ChangeSet, LessonEvent
 from pronote2calendar.settings import GoogleCalendarSettings
@@ -51,29 +50,24 @@ class GoogleCalendarClient:
         self.calendar_id = config.calendar_id
 
     def get_events(self, start: datetime, end: datetime) -> list[CalendarEvent]:
-        try:
-            events_result = (
-                self.service.events()
-                .list(
-                    calendarId=self.calendar_id,
-                    timeMin=start.isoformat(),
-                    timeMax=end.isoformat(),
-                    # maxResults=10,
-                    singleEvents=True,
-                    privateExtendedProperty=["source=" + EXTENDED_PROPERTY_SOURCE],
-                    orderBy="startTime",
-                )
-                .execute()
+        events_result = (
+            self.service.events()
+            .list(
+                calendarId=self.calendar_id,
+                timeMin=start.isoformat(),
+                timeMax=end.isoformat(),
+                # maxResults=10,
+                singleEvents=True,
+                privateExtendedProperty=["source=" + EXTENDED_PROPERTY_SOURCE],
+                orderBy="startTime",
             )
-            events = events_result.get("items", [])
-            logger.debug(
-                "Retrieved %d events from calendar %s", len(events), self.calendar_id
-            )
-            return [_event_from_calendar_dict(event_dict) for event_dict in events]
-
-        except HttpError as error:
-            logger.exception("Error fetching events from Google Calendar: %s", error)
-            return []
+            .execute()
+        )
+        events = events_result.get("items", [])
+        logger.debug(
+            "Retrieved %d events from calendar %s", len(events), self.calendar_id
+        )
+        return [_event_from_calendar_dict(event_dict) for event_dict in events]
 
     def apply_changes(self, changes: ChangeSet):
         def create_event_body(

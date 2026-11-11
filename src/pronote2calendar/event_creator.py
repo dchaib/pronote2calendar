@@ -1,12 +1,8 @@
-import logging
-
 from jinja2 import Environment, StrictUndefined
 from pronotepy import Lesson
 
 from pronote2calendar.models import LessonEvent
 from pronote2calendar.settings import EventsTemplates
-
-logger = logging.getLogger(__name__)
 
 
 def build_context(lesson: Lesson) -> dict:
@@ -44,11 +40,7 @@ def render_event_fields(lesson: Lesson, templates: EventsTemplates) -> dict[str,
         description = env.from_string(templates.description).render(context)
         location = env.from_string(templates.location).render(context)
     except Exception as e:
-        logger.error(
-            "Error rendering templates for lesson %s: %s",
-            lesson.num,
-            e,
-        )
+        e.add_note(f"Error rendering templates for lesson {lesson.num}")
         raise
 
     return {

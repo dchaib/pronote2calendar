@@ -79,9 +79,15 @@ class PronoteClient:
     def get_lessons(self, start: date, end: date) -> list[pronotepy.Lesson]:
         logger.debug("Fetching lessons from %s to %s", start, end)
         lessons = self.client.lessons(start, end)
+        logger.debug("Raw lessons fetched: %d", len(lessons))
+        if logger.isEnabledFor(logging.DEBUG):
+            for lesson in lessons:
+                logger.debug(
+                    "Raw Pronote lesson: %s",
+                    json.dumps(lesson.to_dict(), ensure_ascii=False, default=str),
+                )
         result = self.sort_and_filter_lessons(lessons)
         result = self._convert_lessons_to_aware(result)
-        logger.debug("Raw lessons fetched: %d", len(lessons))
         logger.debug("Fetched %d lessons (after filter)", len(result))
         return result
 

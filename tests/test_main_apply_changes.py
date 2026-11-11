@@ -35,7 +35,7 @@ class DummyPronote:
 
 def run_main_with_changes(monkeypatch, changes_value):
     # Patch setup_logging
-    monkeypatch.setattr(main_mod, "setup_logging", lambda level: None)
+    monkeypatch.setattr(main_mod, "setup_logging", lambda *a, **k: None)
 
     # allow tests to patch Settings beforehand; only create a default if
     # nothing has been changed yet
@@ -65,7 +65,7 @@ def run_main_with_changes(monkeypatch, changes_value):
     )
 
     # Run main
-    main_mod.main()
+    dummy_cal.exit_code = main_mod.main()
 
     return dummy_cal
 
@@ -123,9 +123,47 @@ def test_main_skips_apply_when_no_changes(monkeypatch):
     changes = ChangeSet([], [], [])
     dummy_cal = run_main_with_changes(monkeypatch, changes)
     assert not dummy_cal.applied
+    assert dummy_cal.exit_code == 0
 
 
 def test_main_applies_when_changes_present(monkeypatch):
     changes = ChangeSet([1], [], [])
     dummy_cal = run_main_with_changes(monkeypatch, changes)
     assert dummy_cal.applied
+    assert dummy_cal.exit_code == 0
+
+
+def test_main_stops_before_writes_when_calendar_read_fails(monkeypatch, caplog):
+    def fail_read(self, start, end):
+        raise RuntimeError("calendar unavailable")
+
+    monkeypatch.setattr(DummyCalendar, "get_events", fail_read)
+    calendar = run_main_with_changes(monkeypatch, ChangeSet([1], [], []))
+    assert calendar.exit_code == 1
+    assert not calendar.applied
+    assert len([r for r in caplog.records if r.exc_info]) == 1
+
+
+def test_login_failure_returns_error(monkeypatch):
+    monkeypatch.setattr(DummyPronote, "is_logged_in", lambda self: False)
+    calendar = run_main_with_changes(monkeypatch, ChangeSet([1], [], []))
+    assert calendar.exit_code == 1
+    assert not calendar.applied
+
+
+def test_notification_failure_keeps_applied_changes(monkeypatch):
+    monkeypatch.setattr(main_mod, "send_notifications", lambda *args: False)
+    calendar = run_main_with_changes(monkeypatch, ChangeSet([1], [], []))
+    assert calendar.applied
+    assert calendar.exit_code == 1
+
+
+def test_configuration_error_returns_error_without_traceback(monkeypatch, caplog):
+    def invalid_settings():
+        raise ValueError("invalid configuration")
+
+    monkeypatch.setattr(main_mod, "Settings", invalid_settings)
+    monkeypatch.setattr(main_mod, "setup_logging", lambda *args, **kwargs: None)
+    assert main_mod.main() == 1
+    assert len(caplog.records) == 1
+    assert not caplog.records[0].exc_info

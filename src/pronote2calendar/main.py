@@ -1,4 +1,5 @@
 import logging
+from time import monotonic
 
 from pronote2calendar import change_detection
 from pronote2calendar.date_utils import compute_sync_period
@@ -11,86 +12,89 @@ from pronote2calendar.settings import Settings
 from pronote2calendar.subject_adjustments import apply_subject_adjustments
 from pronote2calendar.time_adjustments import apply_time_adjustments
 
+logger = logging.getLogger(__name__)
 
-def main():
+
+def main() -> int:
+    started = monotonic()
     try:
-        config = Settings()
-    except Exception as e:
-        setup_logging("ERROR")
-        logger = logging.getLogger("pronote2calendar")
-        logger.error("Error loading configuration: %s", e)
-        return
-
-    setup_logging(config.log_level)
-
-    logger = logging.getLogger("pronote2calendar")
-
-    start, end = compute_sync_period(config.sync.weeks)
-
-    logger.info("Updating lessons from %s to %s", start.isoformat(), end.isoformat())
+        # Required fields are loaded from YAML by pydantic-settings.
+        config = Settings()  # type: ignore[call-arg]
+        setup_logging(config.log_level)
+    except Exception as exc:
+        setup_logging("ERROR", use_environment=False)
+        logger.error("Error loading configuration: %s", exc)
+        return 1
 
     try:
-        logger.info("Initializing Pronote client")
-        pronote = PronoteClient(config.pronote, "credentials-pronote.json")
+        start, end = compute_sync_period(config.sync.weeks)
+        logger.info(
+            "Synchronizing lessons from %s to %s", start.isoformat(), end.isoformat()
+        )
 
+        logger.debug("Connecting to Pronote")
+        pronote = PronoteClient(
+            config.pronote,
+            "credentials-pronote.json",
+        )
         if not pronote.is_logged_in():
             logger.error("Pronote login failed")
-            return
+            return 1
 
-        logger.info("Fetching lessons from Pronote")
+        logger.debug("Fetching lessons from Pronote")
         lessons = pronote.get_lessons(start, end)
-        logger.info("Fetched %d lessons", len(lessons) if lessons is not None else 0)
-
-        logger.info("Applying time adjustments to lessons")
+        logger.info("Fetched %d lessons from Pronote", len(lessons))
         lessons = apply_time_adjustments(lessons, config.adjustments.time)
-
-        logger.info("Applying subject adjustments to lessons")
         lessons = apply_subject_adjustments(lessons, config.adjustments.subject)
 
-        logger.info("Initializing Google Calendar client")
+        logger.debug("Initializing Google Calendar client")
         calendar = GoogleCalendarClient(
             config.google_calendar, "credentials-google.json"
         )
-        logger.info("Fetching existing events from Google Calendar")
+        logger.debug("Fetching existing events from Google Calendar")
         existing_events = calendar.get_events(start, end)
-        logger.info(
-            "Fetched %d existing events",
-            len(existing_events) if existing_events is not None else 0,
-        )
+        logger.info("Fetched %d existing calendar events", len(existing_events))
 
-        logger.info("Creating new events from lessons")
         new_events = create_lesson_events(lessons, config.events.templates)
-
-        logger.info("Detecting changes between new and existing events")
         changes = change_detection.get_changes(new_events, existing_events)
-        adds = len(changes.to_add)
-        removes = len(changes.to_remove)
-        updates = len(changes.to_update)
-        logger.info(
-            "Change detection produced add=%d remove=%d update=%d",
-            adds,
-            removes,
-            updates,
+        adds, updates, removes = (
+            len(changes.to_add),
+            len(changes.to_update),
+            len(changes.to_remove),
         )
-
-        if adds == 0 and removes == 0 and updates == 0:
-            logger.info("No changes to apply, skipping calendar update")
-        else:
-            logger.info("Applying changes to calendar")
+        notification_status = "skipped"
+        if adds or updates or removes:
+            logger.debug(
+                "Applying calendar changes: add=%d update=%d remove=%d",
+                adds,
+                updates,
+                removes,
+            )
             calendar.apply_changes(changes)
-            logger.info("Finished applying changes")
+            logger.info(
+                "Applied calendar changes: add=%d update=%d remove=%d",
+                adds,
+                updates,
+                removes,
+            )
+            result = send_notifications(config.notifications, changes)
+            if result is False:
+                notification_status = "failed"
+            elif result is True:
+                notification_status = "sent"
+        else:
+            logger.info("No calendar changes needed")
 
-            if config.notifications.enabled:
-                logger.info("Sending notifications about changes")
-                send_notifications(config.notifications, changes)
-                logger.info("Finished sending notifications")
-            else:
-                logger.info("Notifications are disabled, skipping notification step")
-
-    except Exception as exc:
-        logger.exception("Unhandled exception in main: %s", exc)
-        raise
+        logger.info(
+            "Synchronization finished in %.2fs; notifications=%s",
+            monotonic() - started,
+            notification_status,
+        )
+        return 1 if notification_status == "failed" else 0
+    except Exception:
+        logger.exception("Synchronization failed after %.2fs", monotonic() - started)
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

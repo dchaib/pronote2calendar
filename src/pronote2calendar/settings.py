@@ -10,6 +10,13 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 
+from pronote2calendar.logging_manager import normalize_log_level
+
+LogLevel = Annotated[
+    Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+    BeforeValidator(normalize_log_level),
+]
+
 
 def normalize_time(value: Any) -> Any:
     if (
@@ -109,7 +116,7 @@ class Settings(BaseSettings):
     pronote: PronoteSettings = Field(default_factory=PronoteSettings)
     google_calendar: GoogleCalendarSettings
     sync: SyncSettings = Field(default_factory=SyncSettings)
-    log_level: str = Field(default="INFO")
+    log_level: LogLevel = "INFO"
     adjustments: AjustmentsSettings = Field(default_factory=AjustmentsSettings)
     events: EventsSettings = Field(default_factory=EventsSettings)
     notifications: NotificationsSettings = Field(default_factory=NotificationsSettings)
