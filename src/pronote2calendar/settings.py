@@ -53,6 +53,10 @@ class SyncSettings(BaseSettings):
     weeks: int = Field(default=3, ge=1)
 
 
+class FiltersSettings(BaseSettings):
+    excluded_subjects: list[str] = Field(default_factory=list)
+
+
 class TimeAdjustmentRule(BaseSettings):
     weekdays: list[WeekdayNum]
     start_times: dict[FlexibleTime, FlexibleTime] = Field(default_factory=dict)
@@ -116,6 +120,7 @@ class Settings(BaseSettings):
     pronote: PronoteSettings = Field(default_factory=PronoteSettings)
     google_calendar: GoogleCalendarSettings
     sync: SyncSettings = Field(default_factory=SyncSettings)
+    filters: FiltersSettings = Field(default_factory=FiltersSettings)
     log_level: LogLevel = "INFO"
     adjustments: AjustmentsSettings = Field(default_factory=AjustmentsSettings)
     events: EventsSettings = Field(default_factory=EventsSettings)

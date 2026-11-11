@@ -109,6 +109,28 @@ sync:
 * **sync**
   - **weeks**: The number of weeks (including the current one) to sync. Example: If set to `3`, it will sync the current week and the next 2 weeks. This parameter is optional. If not specified, the default value is `3`. The minimum is `1`.
 
+#### Optional: Subject Filters
+
+You can exclude lessons with specific subject names from synchronization. This is useful if Pronote includes study periods or other activities that you do not want to display in Google Calendar. Use the `excluded_subjects` field under `filters`:
+
+```yaml
+pronote: { ... }
+google_calendar: { ... }
+sync: { ... }
+filters:
+  excluded_subjects:
+    - PERMANENCE
+```
+
+* **filters.excluded_subjects**: An array of subject names to exclude. This parameter is optional; if not specified or empty, no subjects are excluded.
+  - Each name must match the original subject name as displayed in Pronote, including case and spaces.
+  - Filters are applied before subject renaming.
+  - Lessons without a subject are kept.
+
+For example, the list above will exclude all lessons with the subject "PERMANENCE". Any lesson with a subject not in the list will remain unchanged.
+
+Previously exported events for excluded lessons will be removed from Google Calendar on the next synchronization, within the configured sync period and among events managed by this application.
+
 #### Optional: Time Adjustments
 
 You can adjust lesson times for specific weekdays and time slots. This is useful if Pronote displays different times than the actual class times. Use the `time` field under `adjustments`:
