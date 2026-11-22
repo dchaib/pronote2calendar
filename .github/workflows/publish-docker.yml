@@ -19,6 +19,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: '.python-version'
+
+      - name: Verify release version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+
+          with open('pyproject.toml', 'rb') as file:
+              project = tomllib.load(file)['project']
+          with open('uv.lock', 'rb') as file:
+              packages = tomllib.load(file)['package']
+
+          locked_version = next(
+              (package['version'] for package in packages
+               if package['name'] == project['name']
+               and package['source'].get('editable') == '.'),
+              None,
+          )
+          tag = os.environ['RELEASE_TAG']
+          expected_version = tag.removeprefix('v')
+          if project['version'] != expected_version or locked_version != expected_version:
+              raise SystemExit(
+                  f'Release version mismatch for {tag!r}: '
+                  f'pyproject.toml={project["version"]!r}, uv.lock={locked_version!r}. '
+                  f'Expected {expected_version!r} in both files.'
+              )
+          PY
+
       - name: Log in to registry
         uses: docker/login-action@v4
         with:
