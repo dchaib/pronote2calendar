@@ -8,6 +8,8 @@ import pronotepy
 import pytest
 
 from pronote2calendar import main as main_mod
+from pronote2calendar.change_detection import get_changes
+from pronote2calendar.event_creator import create_lesson_events
 from pronote2calendar.lesson_filters import filter_lessons
 from pronote2calendar.models import CalendarEvent
 from pronote2calendar.pronote_client import PronoteClient
@@ -21,13 +23,14 @@ from pronote2calendar.settings import (
 )
 
 
-def make_lesson(name="PERMANENCE", hour=9, num=1):
+def make_lesson(name="PERMANENCE", hour=9, num=1, canceled=False):
     contents = [] if name is None else [{"G": 16, "N": name, "L": name}]
     return pronotepy.Lesson(
         Mock(),
         {
             "N": str(num),
             "P": num,
+            "estAnnule": canceled,
             "DateDuCours": {"V": f"12/11/2026 {hour:02}:00:00"},
             "DateDuCoursFin": {"V": f"12/11/2026 {hour + 1:02}:00:00"},
             "ListeContenus": {"V": contents},
@@ -85,8 +88,7 @@ def test_filters_loaded_from_yaml(tmp_path, monkeypatch, excluded):
     assert config.filters.excluded_subjects == excluded
 
 
-def test_main_filters_before_adjustments_and_removes_exported_lesson(monkeypatch):
-    # The newest version replaces an older course at the same time.
+def test_main_filters_before_adjustments_and_keeps_other_lesson(monkeypatch):
     lessons = [
         make_lesson("Math", num=1),
         make_lesson(num=2),
@@ -122,13 +124,37 @@ def test_main_filters_before_adjustments_and_removes_exported_lesson(monkeypatch
     monkeypatch.setattr(main_mod, "compute_sync_period", lambda weeks: (start, end))
 
     def adjust_time(lessons, rules):
-        assert len(lessons) == 1
-        assert lessons[0].subject.name == "Math"
+        assert [lesson.subject.name for lesson in lessons] == ["Math", "Math"]
         return lessons
 
     monkeypatch.setattr(main_mod, "apply_time_adjustments", adjust_time)
     assert main_mod.main() == 0
     changes = calendar.apply_changes.call_args.args[0]
-    assert changes.to_remove == [permanence]
+    assert changes.to_remove == []
     assert changes.to_add == []
+    assert len(changes.to_update) == 1
+    assert changes.to_update[0].old == permanence
+    assert changes.to_update[0].new.summary == "Maths"
+
+
+def test_sync_keeps_simultaneous_lessons_and_removes_canceled_lessons():
+    pronote = PronoteClient.__new__(PronoteClient)
+    pronote.timezone = ZoneInfo("Europe/Paris")
+    pronote.client = Mock()
+    pronote.client.lessons.return_value = [
+        make_lesson("French", num=1365, canceled=True),
+        make_lesson("French", num=1286),
+        make_lesson("Math", num=1000),
+        make_lesson("History", hour=10, canceled=True),
+    ]
+    start = datetime(2026, 11, 12, 9, tzinfo=pronote.timezone)
+    end = start.replace(hour=11)
+    canceled_event = CalendarEvent("history", start.replace(hour=10), end, "History")
+
+    lessons = pronote.get_lessons(start, end)
+    events = create_lesson_events(lessons, EventsSettings().templates)
+    changes = get_changes(events, [canceled_event])
+
+    assert [event.summary for event in changes.to_add] == ["French", "Math"]
+    assert changes.to_remove == [canceled_event]
     assert changes.to_update == []
