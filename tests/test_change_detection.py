@@ -122,3 +122,24 @@ def test_get_changes_remove_duplicate_events():
     assert changes.to_update == []
     removed = changes.to_remove[0]
     assert removed.id in ["e4", "e5"]
+
+
+def test_get_changes_keeps_both_lessons_at_same_start():
+    start = datetime(2025, 10, 5, 9, 0, tzinfo=ZoneInfo("Europe/Paris"))
+    end = start + timedelta(hours=1)
+    math = LessonEvent(start, end, "Math", None, "Room 1")
+    french = LessonEvent(start, end, "French", None, "Room 2")
+    existing_french = CalendarEvent("french", start, end, "French", location="Room 2")
+
+    changes = get_changes([math, french], [existing_french])
+
+    assert changes.to_add == [math]
+    assert changes.to_update == []
+    assert changes.to_remove == []
+
+    existing_math = CalendarEvent("math", start, end, "Math", location="Room 1")
+    changes = get_changes([math, french], [existing_french, existing_math])
+
+    assert changes.to_add == []
+    assert changes.to_update == []
+    assert changes.to_remove == []

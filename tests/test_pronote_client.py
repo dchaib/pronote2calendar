@@ -25,29 +25,26 @@ def test_skip_canceled_lessons():
     assert result[0].start == lessons[1].start
 
 
-def test_select_highest_num_per_start():
+def test_keep_active_lessons_with_same_start():
     now = datetime.now()
     lessons = [
-        DummyLesson(now, 1),
-        DummyLesson(now, 2),
         DummyLesson(now + timedelta(hours=1), 1),
+        DummyLesson(now, 2),
+        DummyLesson(now, 1),
     ]
 
     pc = PronoteClient.__new__(PronoteClient)
     result = pc.sort_and_filter_lessons(lessons)
 
-    # For the same start time, the lesson with num=2 should be chosen
-    assert any(lesson.num == 2 for lesson in result)
-    # total lessons should be 2 (one for each start time)
-    assert len(result) == 2
+    assert result == [lessons[1], lessons[2], lessons[0]]
 
 
-def test_select_highest_num_per_start_even_if_canceled():
+def test_keep_room_change_when_canceled_lesson_has_higher_num():
     now = datetime.now()
-    lessons = [DummyLesson(now, 1), DummyLesson(now, 2, canceled=True)]
+    replacement = DummyLesson(now, 1286)
+    lessons = [DummyLesson(now, 1365, canceled=True), replacement]
 
     pc = PronoteClient.__new__(PronoteClient)
     result = pc.sort_and_filter_lessons(lessons)
 
-    # total lessons should be 0 because the highest num lesson is canceled
-    assert len(result) == 0
+    assert result == [replacement]

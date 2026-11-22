@@ -1,7 +1,6 @@
 import json
 import logging
 from datetime import date
-from itertools import groupby
 from zoneinfo import ZoneInfo
 
 import pronotepy
@@ -94,17 +93,10 @@ class PronoteClient:
     def sort_and_filter_lessons(
         self, lessons: list[pronotepy.Lesson]
     ) -> list[pronotepy.Lesson]:
-        lessons.sort(key=lambda x: (x.start, -x.num))
-
-        filtered_lessons = []
-        for _, group in groupby(lessons, key=lambda x: x.start):
-            filtered_lessons.append(max(group, key=lambda x: x.num))
-
-        filtered_lessons = [
-            lesson for lesson in filtered_lessons if not lesson.canceled
-        ]
-
-        return filtered_lessons
+        return sorted(
+            (lesson for lesson in lessons if not lesson.canceled),
+            key=lambda lesson: lesson.start,
+        )
 
     def update_credentials(self, credentials: dict):
         with open(self.credentials_file_path, "w") as file:
